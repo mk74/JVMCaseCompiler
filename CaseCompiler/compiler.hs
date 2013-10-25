@@ -35,12 +35,19 @@ preamble = ".class public Program.program\n.super java/lang/Object\n\n"
 			++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
   			++ "return\n.end method\n\n"
 
-static_main :: String
-static_main = ".method public static main([Ljava/lang/String;)V\n"
-  			++ ".limit stack 2\n.limit locals 2\n"
-  			++ "getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
-  			++ "ldc           \"Hello World.\"\n"
-  			++ "invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V\n"
-  			++ "return\n.end method"
+static_main_start :: String
+static_main_start = ".method public static main([Ljava/lang/String;)V\n"
+  					++ ".limit stack 2\n.limit locals 2\n"
 
-main = putStrLn (preamble ++ static_main) --(compile (CEop (CEInt 10) "+" (CEInt 15) ))
+static_main_end :: String
+static_main_end = "getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
+  				  ++ "ldc           \"Hello World.\"\n"
+  				  ++ "invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V\n"
+  				  ++ "return\n.end method"
+
+jasminWrapper :: String -> String
+jasminWrapper str1 = preamble ++ static_main_start ++ str1 ++ static_main_end
+
+main = putStrLn (jasminWrapper "") --(compile (CEop (CEInt 10) "+" (CEInt 15) ))
+
+
