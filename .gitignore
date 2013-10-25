@@ -3,11 +3,8 @@
 .project
 .settings/
 
-# Java class files
-*.class
-
 # generated files
-bin/
+CaseLangJava/bin/
 
 #haskell stuff
 *.o
