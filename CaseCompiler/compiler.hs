@@ -29,6 +29,12 @@ compile (CEop expr1 op1 expr2) = (compile expr1) ++ (compile expr2) ++ (op_func 
 
 --compile _ = "Maciek"
 
+adt_class :: String
+adt_class = ".class public Adt\n.super java/lang/Object\n\n"
+			++ ".method public <init>()V\n"
+			++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
+  			++ "return\n.end method\n\n"
+
 preamble_main :: String
 preamble_main = ".class public Program\n.super java/lang/Object\n\n"
 			++ ".method public <init>()V\n"
@@ -59,6 +65,8 @@ test1 = (CEop (CEInt 10) "+" (CEInt 15))
 --testing nested arithmetic operations
 test3 = (CEop (CEop (CEInt 10) "*" (CEInt 5)) "-" (CEop (CEInt 4) "/" (CEInt 2)))
 
-main = putStrLn (jasminWrapper (compile test3))
+main = do
+		writeFile "adt.j" adt_class
+		putStrLn (jasminWrapper (compile test3))
 
 
