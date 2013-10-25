@@ -29,8 +29,16 @@ compile (CEop expr1 op1 expr2) = (compile expr1) ++ (compile expr2) ++ (op_func 
 
 --compile _ = "Maciek"
 
+new_adt :: String
+new_adt = "new Adt\n"
+		  ++ "dup\n"
+		  ++ "invokespecial Adt/<init>()V\n"
+
 adt_class :: String
 adt_class = ".class public Adt\n.super java/lang/Object\n\n"
+			++ ".field public tag Ljava/lang/String;\n"
+--			++ ".field public value java/lang/String\n"
+--			++ ".field public arr [Ljava/lang/String\n"
 			++ ".method public <init>()V\n"
 			++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
   			++ "return\n.end method\n\n"
@@ -53,7 +61,7 @@ static_main_end = "istore 99\n"
   				  ++ "return\n.end method"
 
 jasminWrapper :: String -> String
-jasminWrapper str1 = preamble_main ++ static_main_start ++ str1 ++ static_main_end
+jasminWrapper str1 = preamble_main ++ static_main_start ++ new_adt ++ str1 ++ static_main_end
 
 --testing addition two numbers
 test1 = (CEop (CEInt 10) "+" (CEInt 15))
