@@ -8,3 +8,10 @@
 
 # generated files
 bin/
+
+#haskell stuff
+*.o
+*.hi
+
+#Compiler
+CaseCompiler/compiler
