@@ -5,11 +5,11 @@
 //	int num;
 //}
 
-class ADT{
-	String tag;
-	String value;
-	ADT array[];
-}
+//class ADT{
+//	String tag;
+//	String value;
+//	ADT array[];
+//}
 
 public class CaseLang {
 
