@@ -19,7 +19,7 @@ compile (CEInt i1) = show i1
 compile (CEBool b1) = show b1
 compile (CEString str1) = str1
 
-compile (CEop e1 op1 e2) = (stack_load e1 e2) ++ (op_func op1)
+compile (CEop e1 op1 e2) = (stack_load e1 e2) ++ (op_func op1) ++ "\n"
 
 {-
 compile (CEop e1 "<" e2) = "Caciek"
@@ -37,17 +37,21 @@ preamble = ".class public Program.program\n.super java/lang/Object\n\n"
 
 static_main_start :: String
 static_main_start = ".method public static main([Ljava/lang/String;)V\n"
-  					++ ".limit stack 2\n.limit locals 2\n"
+  					++ ".limit stack 5\n.limit locals 5\n"
 
 static_main_end :: String
-static_main_end = "getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
-  				  ++ "ldc           \"Hello World.\"\n"
-  				  ++ "invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V\n"
+static_main_end = "istore_3\n"
+				  ++"getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
+ 				  ++ "iload_3\n"
+  				  ++ "invokevirtual java/io/PrintStream/println(I)V\n"
   				  ++ "return\n.end method"
 
 jasminWrapper :: String -> String
 jasminWrapper str1 = preamble ++ static_main_start ++ str1 ++ static_main_end
 
-main = putStrLn (jasminWrapper "") --(compile (CEop (CEInt 10) "+" (CEInt 15) ))
+test1 :: CExpr
+test1 = (CEop (CEInt 10) "+" (CEInt 15))
+
+main = putStrLn (jasminWrapper (compile test1))
 
 
