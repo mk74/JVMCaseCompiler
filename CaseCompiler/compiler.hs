@@ -16,8 +16,8 @@ op_func "/" = "idiv"
 
 --op_func "<" = 
 --op_func "==" = ""
-op_func "and" = "iand"
-op_func "or" = "ior"
+--op_func "and" = "iand"
+--op_func "or" = "ior"
 
 compile :: CExpr -> String
 compile (CEInt i1) = show i1
@@ -53,7 +53,7 @@ jasminWrapper str1 = preamble ++ static_main_start ++ str1 ++ static_main_end
 test1 = (CEop (CEInt 10) "+" (CEInt 15))
 
 --testing AND operator
-test2 = (CEop (CEInt 2) "and" (CEInt 1))
+--test2 = (CEop (CEInt 2) "and" (CEInt 1))
 
 
 --testing nested arithmetic operations
