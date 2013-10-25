@@ -1,14 +1,14 @@
-# Eclipse project files
-.classpath
-.project
-.settings/
-
-# generated files
-CaseLangJava/bin/
+# prototyping in Java
+CaseLangJava/
 
 #haskell stuff
 *.o
 *.hi
 
-#Compiler
+#Compiler binary file
 CaseCompiler/compiler
+
+#tmp source code/ binary of compiled program
+program.j
+Program.class
+
