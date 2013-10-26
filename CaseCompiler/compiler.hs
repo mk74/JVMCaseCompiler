@@ -1,11 +1,11 @@
 type COp = String
 type CType = String
-type CEId = String
+--type CId = String
 
 data CExpr = CEInt Int
 --			 | CEBool Bool
 --			 | CEString String
-			 | CEId --TODO: exprs at the end
+			 | CEId Int --TODO: exprs at the end
 			 | CEop CExpr COp CExpr
 --			 | CENewVar CEId CType CExpr
 			 | CENewVar CExpr CType CExpr
@@ -34,7 +34,8 @@ compile (CEop (CEInt i1) op1 (CEInt i2)) = (stack_load (CEInt i1) (CEInt i2)) ++
 compile (CEop expr1 op1 expr2) = (compile expr1) ++ (compile expr2) ++ (op_func op1) ++ "\n"
 
 -- assume that type is int
-compile (CENewVar (CEInt id1) type1 (CEInt i1)) =  "sipush " ++ show i1 ++ "\nistore " ++ show id1 ++ "\n"
+compile (CEId i1) = "iload " ++ show i1 ++ "\n"
+compile (CENewVar (CEId id1) type1 (CEInt i1)) =  "sipush " ++ show i1 ++ "\nistore " ++ show id1 ++ "\n"
 
 compile (CExprs expr1 expr2) = (compile expr1) ++ (compile expr2)
 
@@ -86,10 +87,10 @@ test3 = (CEop (CEop (CEInt 10) "*" (CEInt 5)) "-" (CEop (CEInt 4) "/" (CEInt 2))
 
 
 --testing new variable
-test4 = (CENewVar (CEInt 5) "int" (CEInt 10))
+test4 =  (CExprs (CENewVar (CEId 5) "int" (CEInt 10)) (CEId 5))
 
 main = do
 		writeFile "adt.j" adt_class
-		putStrLn (jasminWrapper ((compile test4) ++ "iload 5\n"))
+		putStrLn (jasminWrapper ((compile test4)))
 
 
