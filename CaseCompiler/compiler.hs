@@ -7,7 +7,7 @@ data CExpr = CEInt Int
 --			 | CEBool Bool
 --			 | CEString String
 			 | CEId CId --TODO: exprs at the end
-			 | CEop CExpr COp CExpr
+			 | CEOp CExpr COp CExpr
 --			 | CENewVar CEId CType CExpr
 			 | CENewVar CId CType CExpr
 			 | CExprs CExpr CExpr
@@ -32,7 +32,7 @@ compile env (CEId i1) = (env, "iload " ++ show (find i1 env) ++ "\n")
 --compile (CEBool b1) = show b1
 --compile (CEString str1) = str1
 
-compile env (CEop e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
+compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
 
 ---- assume that type is int, and assign int TODO
 compile env (CENewVar id1 type1 e1) =  (env', (compile_str env e1) ++ "istore " ++ show ((length env) +1) ++ "\n")
@@ -82,26 +82,29 @@ jasminWrapper str1 = preamble_main ++ static_main_start ++ new_adt ++ str1 ++ st
 test0 = (CEInt 5)
 
 --testing addition two numbers
-test1 = (CEop (CEInt 10) "+" (CEInt 15))
+test1 = (CEOp (CEInt 10) "+" (CEInt 15))
 
 --testing AND operator
---test2 = (CEop (CEInt 2) "and" (CEInt 1))
+--test2 = (CEOp (CEInt 2) "and" (CEInt 1))
 
 
 --testing nested arithmetic operations
-test3 = (CEop (CEop (CEInt 10) "*" (CEInt 5)) "-" (CEop (CEInt 4) "/" (CEInt 2)))
+test3 = (CEOp (CEOp (CEInt 10) "*" (CEInt 5)) "-" (CEOp (CEInt 4) "/" (CEInt 2)))
 
 
 --testing defining new variable and using it
-test4 =  (CExprs (CENewVar "sth" "int" (CEop (CEInt 10) "*" (CEInt 5))) (CEId "sth"))
+test4 =  (CExprs (CENewVar "sth" "int" (CEOp (CEInt 10) "*" (CEInt 5))) (CEId "sth"))
 
 
 --testing defining new variable and using it
---test5 =  (CExprs (CENewVar "sth" "int" (CEInt 10)) (CEId "sth"))
+-- sth = 10; 	sth2 = sth * 2; sth2
+test5 =  (CExprs (CENewVar "sth" "int" (CEInt 10)) (CExprs (CENewVar "sth2" "int" (CEOp (CEId "sth") "*" (CEInt 2))) (CEId "sth2")) ) 
+
+--	(CEId "sth"))
 
 main = do
 		writeFile "adt.j" adt_class
-		putStrLn (jasminWrapper ((snd (compile [] test4) )))
+		putStrLn (jasminWrapper ((snd (compile [] test5) )))
 
 
 
