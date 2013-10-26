@@ -9,7 +9,7 @@ data CExpr = CEInt Int
 			 | CEId CId --TODO: exprs at the end
 			 | CEop CExpr COp CExpr
 --			 | CENewVar CEId CType CExpr
-			 | CENewVar CExpr CType CExpr
+			 | CENewVar CId CType CExpr
 			 | CExprs CExpr CExpr
 
 stack_load :: CExpr -> CExpr -> String
@@ -36,7 +36,7 @@ compile env (CEop (CEInt i1) op1 (CEInt i2)) = (env, (stack_load (CEInt i1) (CEI
 compile env (CEop e1 op1 e2) = (env, (snd (compile env e1)) ++ (snd (compile env e2)) ++ (op_func op1) ++ "\n")
 
 ---- assume that type is int, and assign int TODO
-compile env (CENewVar (CEId id1) type1 (CEInt i1)) =  (env', "sipush " ++ show i1 ++ "\nistore " ++ show ((length env) +1) ++ "\n")
+compile env (CENewVar id1 type1 (CEInt i1)) =  (env', "sipush " ++ show i1 ++ "\nistore " ++ show ((length env) +1) ++ "\n")
 														where env' = [(id1, (length env) +1)] ++ env
 
 compile env (CExprs e1 e2) = ((fst res1), (snd res1) ++ (snd (compile (fst res1) e2)) )
@@ -94,7 +94,7 @@ test3 = (CEop (CEop (CEInt 10) "*" (CEInt 5)) "-" (CEop (CEInt 4) "/" (CEInt 2))
 
 
 --testing defining new variable and using it
-test4 =  (CExprs (CENewVar (CEId "sth") "int" (CEInt 10)) (CEId "sth"))
+test4 =  (CExprs (CENewVar "sth" "int" (CEInt 10)) (CEId "sth"))
 
 main = do
 		writeFile "adt.j" adt_class
