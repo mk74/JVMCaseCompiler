@@ -49,7 +49,7 @@ adt_class :: String
 adt_class = ".class public Adt\n.super java/lang/Object\n\n"
 			++ ".field public tag Ljava/lang/String;\n"
 			++ ".field public value I\n"
---			++ ".field public arr [Ljava/lang/String\n"
+			++ ".field public arr [LAdt;\n"
 			++ ".method public <init>()V\n"
 			++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
   			++ "return\n.end method\n\n"
