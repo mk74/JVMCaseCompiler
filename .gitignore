@@ -11,4 +11,5 @@ CaseCompiler/compiler
 #tmp source code/ binary of compiled program
 program.j
 Program.class
-
+adt.j
+Adt.class
