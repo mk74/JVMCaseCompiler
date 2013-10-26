@@ -23,32 +23,44 @@ op_func "/" = "idiv"
 --op_func "and" = "iand"
 --op_func "or" = "ior"
 
+store_instr :: String -> String
+store_instr "int" = "istore "
+store_instr _ = "astore "
+
 compile_str :: Env ->CExpr -> String
 compile_str env expr = snd (compile env expr)
 
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = (env, "sipush " ++ show i1 ++ "\n")
 compile env (CEId id1) = (env, "iload " ++ show (find id1 env) ++ "\n")
-compile env (CConst id1 expr1) = (env, "\n")
+compile env (CConst id1 e1) = (env, (new_adt id1 (compile_str env e1) ) )
 --compile (CEBool b1) = show b1
 --compile (CEString str1) = str1
 
 compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
 
-compile env (CENewVar id1 type1 e1) =  (env', (compile_str env e1) ++ "istore " ++ show ((length env) + 2) ++ "\n")
+compile env (CENewVar id1 t1 e1) =  (env', (compile_str env e1) ++ (store_instr t1) ++ show ((length env) + 2) ++ "\n")
 														where env' = [(id1, (length env) + 2)] ++ env
 
 compile env (CExprs [e1]) = (env, compile_str env e1)
 compile env (CExprs (e1:es)) = ( (fst res1), (snd res1) ++ (snd (compile (fst res1) (CExprs es) ) ) )
 								where res1 = (compile env e1)
 
-new_adt :: String -> String
-new_adt name = "new Adt\n"
-	      ++ "dup\n"
-		  ++ "invokespecial Adt/<init>()V\n"
-		  ++ "astore_1\naload_1\n"
-		  ++ "ldc \"" ++ name ++ "\"\n"
-		  ++ "putfield Adt/tag Ljava/lang/String;\n"
+-- creates new object of ADT class
+-- gets tag and jvm code responsible for creating value
+-- after this function new object is on the top of the stack
+new_adt :: String -> String -> String
+new_adt tag value_str = "new Adt\n"
+	      				++ "dup\n"
+		  				++ "invokespecial Adt/<init>()V\n"
+		  				++ "astore_1\n"
+		  				++ "aload_1\n"
+		  				++ "ldc \"" ++ tag ++ "\"\n"
+		  				++ "putfield Adt/tag Ljava/lang/String;\n"
+		  				++ "aload_1\n"
+		  				++ value_str
+		  				++ "putfield Adt/value I\n"
+		  				++ "aload_1\n"
 
 
 adt_class :: String
@@ -78,7 +90,7 @@ static_main_end = "istore 99\n"
   				  ++ "return\n.end method"
 
 jasminWrapper :: String -> String
-jasminWrapper str1 = preamble_main ++ static_main_start ++ (new_adt "something") ++ str1 ++ static_main_end
+jasminWrapper str1 = preamble_main ++ static_main_start ++ str1 ++ static_main_end
 
 test0 = (CEInt 5)
 
@@ -104,9 +116,13 @@ test4 =  (CExprs [(CENewVar "sth" "int" (CEOp (CEInt 10) "*" (CEInt 5))), (CEId 
 -- sth :: int = 10; sth2 :: int = sth * 2; sth2
 test5 =  (CExprs [(CENewVar "sth" "int" (CEInt 10)), (CENewVar "sth2" "int" (CEOp (CEId "sth") "*" (CEInt 2))), (CEId "sth2") ] )
 
+--testing constructor
+--sth:: Age = Age 3
+test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEInt 2)] )
+
 main = do
 		writeFile "adt.j" adt_class
-		putStrLn (jasminWrapper ((snd (compile [] test5) )))
+		putStrLn (jasminWrapper ((snd (compile [] test6) )))
 
 
 
