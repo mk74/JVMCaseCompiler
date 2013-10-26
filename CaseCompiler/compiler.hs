@@ -35,7 +35,7 @@ compile env (CEId i1) = (env, "iload " ++ show (find i1 env) ++ "\n")
 compile env (CEop e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
 
 ---- assume that type is int, and assign int TODO
-compile env (CENewVar id1 type1 (CEInt i1)) =  (env', "sipush " ++ show i1 ++ "\nistore " ++ show ((length env) +1) ++ "\n")
+compile env (CENewVar id1 type1 e1) =  (env', (compile_str env e1) ++ "istore " ++ show ((length env) +1) ++ "\n")
 														where env' = [(id1, (length env) +1)] ++ env
 
 compile env (CExprs e1 e2) = ((fst res1), (snd res1) ++ (snd (compile (fst res1) e2)) )
@@ -93,15 +93,15 @@ test3 = (CEop (CEop (CEInt 10) "*" (CEInt 5)) "-" (CEop (CEInt 4) "/" (CEInt 2))
 
 
 --testing defining new variable and using it
-test4 =  (CExprs (CENewVar "sth" "int" (CEInt 10)) (CEId "sth"))
+test4 =  (CExprs (CENewVar "sth" "int" (CEop (CEInt 10) "*" (CEInt 5))) (CEId "sth"))
 
 
 --testing defining new variable and using it
---test4 =  (CExprs (CENewVar "sth" "int" (CEInt 10)) (CEId "sth"))
+--test5 =  (CExprs (CENewVar "sth" "int" (CEInt 10)) (CEId "sth"))
 
 main = do
 		writeFile "adt.j" adt_class
-		putStrLn (jasminWrapper ((snd (compile [] test3) )))
+		putStrLn (jasminWrapper ((snd (compile [] test4) )))
 
 
 
