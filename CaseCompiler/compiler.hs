@@ -1,9 +1,12 @@
 type COp = String
+type CType = String
+type CEId = String
 
 data CExpr = CEInt Int
-			 | CEBool Bool
-			 | CEString String
+--			 | CEBool Bool
+--			 | CEString String
 			 | CEop CExpr COp CExpr
+			 | CENewVar CEId CType CExpr
 
 stack_load :: CExpr -> CExpr -> String
 stack_load (CEInt i1) (CEInt i2) = "sipush " ++ show i1 ++ "\nsipush " ++ show i2 ++ "\n"
@@ -21,11 +24,13 @@ op_func "/" = "idiv"
 
 compile :: CExpr -> String
 compile (CEInt i1) = show i1
-compile (CEBool b1) = show b1
-compile (CEString str1) = str1
+--compile (CEBool b1) = show b1
+--compile (CEString str1) = str1
 
 compile (CEop (CEInt i1) op1 (CEInt i2)) = (stack_load (CEInt i1) (CEInt i2)) ++ (op_func op1) ++ "\n"
 compile (CEop expr1 op1 expr2) = (compile expr1) ++ (compile expr2) ++ (op_func op1) ++ "\n"
+
+--compile (CENewVar id1 type1 expr1) = 
 
 --compile _ = "Maciek"
 
@@ -37,7 +42,7 @@ new_adt = "new Adt\n"
 adt_class :: String
 adt_class = ".class public Adt\n.super java/lang/Object\n\n"
 			++ ".field public tag Ljava/lang/String;\n"
---			++ ".field public value java/lang/String\n"
+			++ ".field public value I\n"
 --			++ ".field public arr [Ljava/lang/String\n"
 			++ ".method public <init>()V\n"
 			++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
