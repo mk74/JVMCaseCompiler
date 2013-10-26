@@ -5,8 +5,11 @@ type CEId = String
 data CExpr = CEInt Int
 --			 | CEBool Bool
 --			 | CEString String
+			 | CEId --TODO: exprs at the end
 			 | CEop CExpr COp CExpr
-			 | CENewVar CEId CType CExpr
+--			 | CENewVar CEId CType CExpr
+			 | CENewVar CExpr CType CExpr
+			 | CExprs CExpr CExpr
 
 stack_load :: CExpr -> CExpr -> String
 stack_load (CEInt i1) (CEInt i2) = "sipush " ++ show i1 ++ "\nsipush " ++ show i2 ++ "\n"
@@ -30,7 +33,10 @@ compile (CEInt i1) = show i1
 compile (CEop (CEInt i1) op1 (CEInt i2)) = (stack_load (CEInt i1) (CEInt i2)) ++ (op_func op1) ++ "\n"
 compile (CEop expr1 op1 expr2) = (compile expr1) ++ (compile expr2) ++ (op_func op1) ++ "\n"
 
---compile (CENewVar id1 type1 expr1) = 
+-- assume that type is int
+compile (CENewVar (CEInt id1) type1 (CEInt i1)) =  "sipush " ++ show i1 ++ "\nistore " ++ show id1 ++ "\n"
+
+compile (CExprs expr1 expr2) = (compile expr1) ++ (compile expr2)
 
 --compile _ = "Maciek"
 
@@ -78,8 +84,12 @@ test1 = (CEop (CEInt 10) "+" (CEInt 15))
 --testing nested arithmetic operations
 test3 = (CEop (CEop (CEInt 10) "*" (CEInt 5)) "-" (CEop (CEInt 4) "/" (CEInt 2)))
 
+
+--testing new variable
+test4 = (CENewVar (CEInt 5) "int" (CEInt 10))
+
 main = do
 		writeFile "adt.j" adt_class
-		putStrLn (jasminWrapper (compile test3))
+		putStrLn (jasminWrapper ((compile test4) ++ "iload 5\n"))
 
 
