@@ -8,7 +8,6 @@ data CExpr = CEInt Int
 --			 | CEString String
 			 | CEId CId --TODO: exprs at the end
 			 | CEOp CExpr COp CExpr
---			 | CENewVar CEId CType CExpr
 			 | CENewVar CId CType CExpr
 			 | CExprs CExpr CExpr
 
@@ -34,16 +33,11 @@ compile env (CEId i1) = (env, "iload " ++ show (find i1 env) ++ "\n")
 
 compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
 
----- assume that type is int, and assign int TODO
 compile env (CENewVar id1 type1 e1) =  (env', (compile_str env e1) ++ "istore " ++ show ((length env) +1) ++ "\n")
 														where env' = [(id1, (length env) +1)] ++ env
 
 compile env (CExprs e1 e2) = ((fst res1), (snd res1) ++ (snd (compile (fst res1) e2)) )
 								where res1 = (compile env e1)
-
---(env, (snd (compile env e1)) ++ (snd (compile env e2)) ) --this will require tuple to pass env between instructions
-
---compile _ = "Maciek"
 
 new_adt :: String
 new_adt = "new Adt\n"
@@ -82,6 +76,7 @@ jasminWrapper str1 = preamble_main ++ static_main_start ++ new_adt ++ str1 ++ st
 test0 = (CEInt 5)
 
 --testing addition two numbers
+-- 10 + 15
 test1 = (CEOp (CEInt 10) "+" (CEInt 15))
 
 --testing AND operator
@@ -89,22 +84,22 @@ test1 = (CEOp (CEInt 10) "+" (CEInt 15))
 
 
 --testing nested arithmetic operations
+-- (10 * 5) - (4/2)
 test3 = (CEOp (CEOp (CEInt 10) "*" (CEInt 5)) "-" (CEOp (CEInt 4) "/" (CEInt 2)))
 
 
 --testing defining new variable and using it
+-- sth ::  int = 10 * 5; sth
 test4 =  (CExprs (CENewVar "sth" "int" (CEOp (CEInt 10) "*" (CEInt 5))) (CEId "sth"))
 
 
 --testing defining new variable and using it
--- sth = 10; 	sth2 = sth * 2; sth2
+-- sth :: int = 10; sth2 :: int = sth * 2; sth2
 test5 =  (CExprs (CENewVar "sth" "int" (CEInt 10)) (CExprs (CENewVar "sth2" "int" (CEOp (CEId "sth") "*" (CEInt 2))) (CEId "sth2")) ) 
-
---	(CEId "sth"))
 
 main = do
 		writeFile "adt.j" adt_class
-		putStrLn (jasminWrapper ((snd (compile [] test5) )))
+		putStrLn (jasminWrapper ((snd (compile [] test4) )))
 
 
 
