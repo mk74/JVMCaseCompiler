@@ -12,9 +12,6 @@ data CExpr = CEInt Int
 			 | CENewVar CId CType CExpr
 			 | CExprs CExpr CExpr
 
-stack_load :: CExpr -> CExpr -> String
-stack_load (CEInt i1) (CEInt i2) = "sipush " ++ show i1 ++ "\nsipush " ++ show i2 ++ "\n"
-
 op_func :: String -> String
 op_func "+" = "iadd"
 op_func "-" = "isub"
@@ -26,14 +23,16 @@ op_func "/" = "idiv"
 --op_func "and" = "iand"
 --op_func "or" = "ior"
 
+compile_str :: Env ->CExpr -> String
+compile_str env expr = snd (compile env expr)
+
 compile :: Env -> CExpr -> (Env, String)
-compile env (CEInt i1) = (env, show i1)
+compile env (CEInt i1) = (env, "sipush " ++ show i1 ++ "\n")
 compile env (CEId i1) = (env, "iload " ++ show (find i1 env) ++ "\n")
 --compile (CEBool b1) = show b1
 --compile (CEString str1) = str1
 
-compile env (CEop (CEInt i1) op1 (CEInt i2)) = (env, (stack_load (CEInt i1) (CEInt i2)) ++ (op_func op1) ++ "\n")
-compile env (CEop e1 op1 e2) = (env, (snd (compile env e1)) ++ (snd (compile env e2)) ++ (op_func op1) ++ "\n")
+compile env (CEop e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
 
 ---- assume that type is int, and assign int TODO
 compile env (CENewVar id1 type1 (CEInt i1)) =  (env', "sipush " ++ show i1 ++ "\nistore " ++ show ((length env) +1) ++ "\n")
@@ -96,9 +95,13 @@ test3 = (CEop (CEop (CEInt 10) "*" (CEInt 5)) "-" (CEop (CEInt 4) "/" (CEInt 2))
 --testing defining new variable and using it
 test4 =  (CExprs (CENewVar "sth" "int" (CEInt 10)) (CEId "sth"))
 
+
+--testing defining new variable and using it
+--test4 =  (CExprs (CENewVar "sth" "int" (CEInt 10)) (CEId "sth"))
+
 main = do
 		writeFile "adt.j" adt_class
-		putStrLn (jasminWrapper ((snd (compile [] test4) )))
+		putStrLn (jasminWrapper ((snd (compile [] test3) )))
 
 
 
