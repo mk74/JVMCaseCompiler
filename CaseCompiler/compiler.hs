@@ -6,7 +6,8 @@ type Env = [(CId, Int)] --maps string id to local variable's number TODO
 data CExpr = CEInt Int
 --			 | CEBool Bool
 --			 | CEString String
-			 | CEId CId --TODO: exprs at the end
+			 | CEId CId
+			 | CConst CId CExpr --TODO: exprs at the end
 			 | CEOp CExpr COp CExpr
 			 | CENewVar CId CType CExpr
 			 | CExprs [CExpr]
@@ -27,23 +28,28 @@ compile_str env expr = snd (compile env expr)
 
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = (env, "sipush " ++ show i1 ++ "\n")
-compile env (CEId i1) = (env, "iload " ++ show (find i1 env) ++ "\n")
+compile env (CEId id1) = (env, "iload " ++ show (find id1 env) ++ "\n")
+compile env (CConst id1 expr1) = (env, "\n")
 --compile (CEBool b1) = show b1
 --compile (CEString str1) = str1
 
 compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
 
-compile env (CENewVar id1 type1 e1) =  (env', (compile_str env e1) ++ "istore " ++ show ((length env) +1) ++ "\n")
-														where env' = [(id1, (length env) +1)] ++ env
+compile env (CENewVar id1 type1 e1) =  (env', (compile_str env e1) ++ "istore " ++ show ((length env) + 2) ++ "\n")
+														where env' = [(id1, (length env) + 2)] ++ env
 
 compile env (CExprs [e1]) = (env, compile_str env e1)
 compile env (CExprs (e1:es)) = ( (fst res1), (snd res1) ++ (snd (compile (fst res1) (CExprs es) ) ) )
 								where res1 = (compile env e1)
 
-new_adt :: String
-new_adt = "new Adt\n"
+new_adt :: String -> String
+new_adt name = "new Adt\n"
 	      ++ "dup\n"
 		  ++ "invokespecial Adt/<init>()V\n"
+		  ++ "astore_1\naload_1\n"
+		  ++ "ldc \"" ++ name ++ "\"\n"
+		  ++ "putfield Adt/tag Ljava/lang/String;\n"
+
 
 adt_class :: String
 adt_class = ".class public Adt\n.super java/lang/Object\n\n"
@@ -72,7 +78,7 @@ static_main_end = "istore 99\n"
   				  ++ "return\n.end method"
 
 jasminWrapper :: String -> String
-jasminWrapper str1 = preamble_main ++ static_main_start ++ new_adt ++ str1 ++ static_main_end
+jasminWrapper str1 = preamble_main ++ static_main_start ++ (new_adt "something") ++ str1 ++ static_main_end
 
 test0 = (CEInt 5)
 
