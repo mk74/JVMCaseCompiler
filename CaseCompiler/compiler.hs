@@ -1,6 +1,7 @@
 type COp = String
 type CType = String
---type CId = String
+type CId = String
+type Env = [(Int, Int)] --maps string id to local variable's number TODO
 
 data CExpr = CEInt Int
 --			 | CEBool Bool
@@ -25,25 +26,29 @@ op_func "/" = "idiv"
 --op_func "and" = "iand"
 --op_func "or" = "ior"
 
-compile :: CExpr -> String
-compile (CEInt i1) = show i1
+compile :: Env -> CExpr -> (Env, String)
+compile env (CEInt i1) = (env, show i1)
+compile env (CEId i1) = (env, "iload " ++ show (find i1 env) ++ "\n")
 --compile (CEBool b1) = show b1
 --compile (CEString str1) = str1
 
-compile (CEop (CEInt i1) op1 (CEInt i2)) = (stack_load (CEInt i1) (CEInt i2)) ++ (op_func op1) ++ "\n"
-compile (CEop expr1 op1 expr2) = (compile expr1) ++ (compile expr2) ++ (op_func op1) ++ "\n"
+compile env (CEop (CEInt i1) op1 (CEInt i2)) = (env, (stack_load (CEInt i1) (CEInt i2)) ++ (op_func op1) ++ "\n")
+compile env (CEop e1 op1 e2) = (env, (snd (compile env e1)) ++ (snd (compile env e2)) ++ (op_func op1) ++ "\n")
 
--- assume that type is int
-compile (CEId i1) = "iload " ++ show i1 ++ "\n"
-compile (CENewVar (CEId id1) type1 (CEInt i1)) =  "sipush " ++ show i1 ++ "\nistore " ++ show id1 ++ "\n"
+---- assume that type is int, and assign int TODO
+compile env (CENewVar (CEId id1) type1 (CEInt i1)) =  (env', "sipush " ++ show i1 ++ "\nistore " ++ show id1 ++ "\n")
+														where env' = [(id1, id1)] ++ env
 
-compile (CExprs expr1 expr2) = (compile expr1) ++ (compile expr2)
+compile env (CExprs e1 e2) = ((fst res1), (snd res1) ++ (snd (compile (fst res1) e2)) )
+								where res1 = (compile env e1)
+
+--(env, (snd (compile env e1)) ++ (snd (compile env e2)) ) --this will require tuple to pass env between instructions
 
 --compile _ = "Maciek"
 
 new_adt :: String
 new_adt = "new Adt\n"
-		  ++ "dup\n"
+	      ++ "dup\n"
 		  ++ "invokespecial Adt/<init>()V\n"
 
 adt_class :: String
@@ -75,6 +80,8 @@ static_main_end = "istore 99\n"
 jasminWrapper :: String -> String
 jasminWrapper str1 = preamble_main ++ static_main_start ++ new_adt ++ str1 ++ static_main_end
 
+test0 = (CEInt 5)
+
 --testing addition two numbers
 test1 = (CEop (CEInt 10) "+" (CEInt 15))
 
@@ -86,11 +93,16 @@ test1 = (CEop (CEInt 10) "+" (CEInt 15))
 test3 = (CEop (CEop (CEInt 10) "*" (CEInt 5)) "-" (CEop (CEInt 4) "/" (CEInt 2)))
 
 
---testing new variable
+--testing defining new variable and using it
 test4 =  (CExprs (CENewVar (CEId 5) "int" (CEInt 10)) (CEId 5))
 
 main = do
 		writeFile "adt.j" adt_class
-		putStrLn (jasminWrapper ((compile test4)))
+		putStrLn (jasminWrapper ((snd (compile [] test4) )))
+
+
+
+find id env = case lookup id env of
+		   Just e -> e
 
 
