@@ -5,7 +5,7 @@ type Env = [(CId, (CType, Int) )]
 
 data CExpr = CEInt Int
 --			 | CEBool Bool
---			 | CEString String
+			 | CEString String
 			 | CEId CId
 			 | CConst CId CExpr --TODO: exprs at the end
 			 | CEOp CExpr COp CExpr
@@ -48,11 +48,12 @@ compile_str env expr = snd (compile env expr)
 
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = ( (track_stack "int" env), "sipush " ++ show i1 ++ "\n")
+compile env (CEString str1) = ( (track_stack "string" env), "ldc \"" ++ str1 ++ "\"\n")
 compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_local_var id1 env) ++ "\n")
 								where type1 = get_type id1 env
 compile env (CConst id1 e1) = (env, (new_adt id1 (compile_str env e1) ) )
 --compile (CEBool b1) = show b1
---compile (CEString str1) = str1
+
 
 compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
 
@@ -72,11 +73,12 @@ printing_code :: Env -> String
 printing_code env = (store_instr type1 ) ++ " 99\n"
 				  ++"getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
  				  ++ (load_instr type1 ) ++ " 99\n"
-  				  ++ "invokevirtual " ++ (println_signature type1) ++ "\n"
+  				  ++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
   				  	where type1 = fst (find "" env)
 
 println_signature :: String -> String
-println_signature "int" = "java/io/PrintStream/println(I)V"
+println_signature "int" = "I"
+println_signature "string" = "Ljava/lang/String;"
 println_signature a = a
 
 
@@ -150,10 +152,14 @@ test5 =  (CExprs [(CENewVar "sth" "int" (CEInt 10)), (CENewVar "sth2" "int" (CEO
 --sth:: Age = Age 3; sth
 test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEInt 2)] )
 
+--testing string variable
+--"Something"
+test7 = (CEString "Something")
+
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test6)
+			where compiled = (compile start_env test7)
 
 
 
