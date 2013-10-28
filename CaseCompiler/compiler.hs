@@ -41,7 +41,7 @@ start_env :: Env
 start_env = [("", ("", -1) )]
 
 track_stack :: CType -> Env -> Env
-track_stack type1 env1 = [("", (type1, -1) )] ++ (drop 1 env1)
+track_stack type1 env1 = (drop 1 env1) ++ [("", (type1, -1) )]
 
 compile_str :: Env ->CExpr -> String
 compile_str env expr = snd (compile env expr)
