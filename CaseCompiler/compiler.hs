@@ -67,6 +67,19 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 									compiled = (compile (fst res1) (CExprs es) )
 									res1 = (compile env e1)
 
+
+printing_code :: Env -> String
+printing_code env = (store_instr type1 ) ++ " 99\n"
+				  ++"getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
+ 				  ++ (load_instr type1 ) ++ " 99\n"
+  				  ++ "invokevirtual " ++ (println_signature type1) ++ "\n"
+  				  	where type1 = fst (find "" env)
+
+println_signature :: String -> String
+println_signature "int" = "java/io/PrintStream/println(I)V"
+println_signature a = a
+
+
 -- creates new object of ADT class
 -- gets tag and jvm code responsible for creating value
 -- after this function new object is on the top of the stack
@@ -104,14 +117,10 @@ static_main_start = ".method public static main([Ljava/lang/String;)V\n"
   					++ ".limit stack 100\n.limit locals 100\n"
 
 static_main_end :: String
-static_main_end = "istore 99\n"
-				  ++"getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
- 				  ++ "iload 99\n"
-  				  ++ "invokevirtual java/io/PrintStream/println(I)V\n"
-  				  ++ "return\n.end method"
+static_main_end = "return\n.end method"
 
 jasminWrapper :: String -> String
-jasminWrapper str1 = preamble_main ++ static_main_start ++ str1 ++ static_main_end
+jasminWrapper prog_code = preamble_main ++ static_main_start ++ prog_code ++ static_main_end
 
 test0 = (CEInt 5)
 
@@ -143,7 +152,8 @@ test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEInt 2)] 
 
 main = do
 		writeFile "adt.j" adt_class
-		putStrLn (jasminWrapper ((snd (compile start_env test6) )))
+		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
+			where compiled = (compile start_env test6)
 
 
 
