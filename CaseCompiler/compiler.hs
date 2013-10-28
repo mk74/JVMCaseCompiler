@@ -156,10 +156,14 @@ test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEInt 2)] 
 --"Something"
 test7 = (CEString "Something")
 
+--testing defining new variable as string
+--sth:: string = "Something"; sth
+test8 = (CExprs [(CENewVar "sth" "string" (CEString "Something") ) , (CEId "sth")] )
+
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test7)
+			where compiled = (compile start_env test8)
 
 
 
