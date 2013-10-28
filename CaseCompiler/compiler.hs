@@ -59,9 +59,13 @@ compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2
 compile env (CENewVar id1 t1 e1) =  (env', (compile_str env e1) ++ (store_instr t1) ++ show ((length env) + 1) ++ "\n")
 														where env' = [(id1, (t1, (length env) + 1) )] ++ env
 
-compile env (CExprs [e1]) = (env, compile_str env e1)
-compile env (CExprs (e1:es)) = ( (fst res1), (snd res1) ++ (snd (compile (fst res1) (CExprs es) ) ) )
-								where res1 = (compile env e1)
+compile env (CExprs [e1]) = (fst compiled, snd compiled)
+								where 
+									compiled = compile env e1
+compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
+								where 
+									compiled = (compile (fst res1) (CExprs es) )
+									res1 = (compile env e1)
 
 -- creates new object of ADT class
 -- gets tag and jvm code responsible for creating value
