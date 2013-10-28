@@ -110,6 +110,10 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
 			++ ".method public <init>()V\n"
 			++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
   			++ "return\n.end method\n\n"
+  			++ ".method public toString()Ljava/lang/String;\n"
+			++ "aload_0\n"
+ 			++ "getfield Adt/tag Ljava/lang/String;\n"
+  			++ "areturn\n.end method\n\n"
 
 preamble_main :: String
 preamble_main = ".class public Program\n.super java/lang/Object\n\n"
@@ -153,7 +157,7 @@ test5 =  (CExprs [(CENewVar "sth" "int" (CEInt 10)), (CENewVar "sth2" "int" (CEO
 
 --testing constructor
 --sth:: Age = Age 3; sth
-test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEInt 2)] )
+test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEId "sth")] )
 
 --testing string variable
 --"Something"
@@ -174,7 +178,7 @@ test10 = (CExprs [(CENewVar "sth" "bool" (CEBool False) ) , (CEId "sth")] )
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test8)
+			where compiled = (compile start_env test6)
 
 
 
