@@ -1,7 +1,7 @@
 type COp = String
 type CType = String
 type CId = String
-type Env = [(CId, Int)] --maps string id to local variable's number TODO
+type Env = [(CId, (CType, Int) )]
 
 data CExpr = CEInt Int
 --			 | CEBool Bool
@@ -27,12 +27,22 @@ store_instr :: String -> String
 store_instr "int" = "istore "
 store_instr _ = "astore "
 
+load_instr :: String -> String
+load_instr "int" = "iload "
+load_instr _ = "aload "
+
+get_type :: String -> Env -> String
+get_type id1 env = fst (find id1 env)
+
+get_local_var :: String -> Env -> String
+get_local_var id1 env = show (snd (find id1 env))
+
 compile_str :: Env ->CExpr -> String
 compile_str env expr = snd (compile env expr)
 
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = (env, "sipush " ++ show i1 ++ "\n")
-compile env (CEId id1) = (env, "iload " ++ show (find id1 env) ++ "\n")
+compile env (CEId id1) = (env, (load_instr (get_type id1 env) ) ++ (get_local_var id1 env) ++ "\n")
 compile env (CConst id1 e1) = (env, (new_adt id1 (compile_str env e1) ) )
 --compile (CEBool b1) = show b1
 --compile (CEString str1) = str1
@@ -40,7 +50,7 @@ compile env (CConst id1 e1) = (env, (new_adt id1 (compile_str env e1) ) )
 compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
 
 compile env (CENewVar id1 t1 e1) =  (env', (compile_str env e1) ++ (store_instr t1) ++ show ((length env) + 2) ++ "\n")
-														where env' = [(id1, (length env) + 2)] ++ env
+														where env' = [(id1, (t1, (length env) + 2) )] ++ env
 
 compile env (CExprs [e1]) = (env, compile_str env e1)
 compile env (CExprs (e1:es)) = ( (fst res1), (snd res1) ++ (snd (compile (fst res1) (CExprs es) ) ) )
@@ -117,7 +127,7 @@ test4 =  (CExprs [(CENewVar "sth" "int" (CEOp (CEInt 10) "*" (CEInt 5))), (CEId 
 test5 =  (CExprs [(CENewVar "sth" "int" (CEInt 10)), (CENewVar "sth2" "int" (CEOp (CEId "sth") "*" (CEInt 2))), (CEId "sth2") ] )
 
 --testing constructor
---sth:: Age = Age 3
+--sth:: Age = Age 3; sth
 test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEInt 2)] )
 
 main = do
