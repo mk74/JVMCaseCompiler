@@ -56,9 +56,6 @@ compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_
 								where type1 = get_type id1 env
 
 compile env (CConst id1 es) = (env, (create_adt_inline id1 (length es) ) ++ (loop_add_members env es) )
---compile env (CConst id1 [e1]) = (env, (new_adt id1 (compile_str env e1)) )
---compile env (CConst id1 (e1:es)) = (env, (new_adt id1 (compile_str env e1)) ++ (compile_str env (CExprs es) ) )
-
 
 compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
 
@@ -85,21 +82,8 @@ create_adt_inline tag n = "ldc \"" ++ tag ++ "\"\n"
 						  ++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
 						  ++ (concat ( replicate n "dup\n" ))
 
-add_member_inline :: String  -- -> String
+add_member_inline :: String
 add_member_inline = "invokevirtual Adt/add(LAdt;)V\n"
-	--"CONNECT:" ++ id1 ++ "\n"
-
---new_adt :: String -> String -> String
---new_adt tagname compiled = "CREATE OBJECT: " ++ tagname ++ "\n " ++ compiled ++ "\nCONNECT" ++ tagname ++ "\n"
-
--- creates new object of ADT class
--- gets tag and jvm code responsible for creating value
--- after this function new object is on the top of the stack
---new_adt :: String -> String -> Int -> String
---new_adt tag value_str i1 = "ldc \"" ++ tag ++ "\"\n"
---						++ value_str
---						++ "sipush " ++ show i1 ++ "\n"
---						++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
 
 
 printing_code :: Env -> String
