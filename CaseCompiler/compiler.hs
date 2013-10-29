@@ -91,20 +91,10 @@ boolean_value = "invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;"
 -- gets tag and jvm code responsible for creating value
 -- after this function new object is on the top of the stack
 new_adt :: String -> String -> String
-new_adt tag value_str = "new Adt\n"
-	      				++ "dup\n"
-		  				++ "invokespecial Adt/<init>()V\n"
-		  				++ "astore_1\n"
-		  				++ "aload_1\n"
-		  				++ "ldc \"" ++ tag ++ "\"\n"
-		  				++ "putfield Adt/tag Ljava/lang/String;\n"
-		  				++ "aload_1\n"
-		  				++ value_str
-		  				++ "putfield Adt/value I\n"
-		  				++ "aload_1\n"
-		  				++ "iconst_2\nanewarray Adt\n"
-		  				++ "putfield Adt/arr [LAdt;\n"
-		  				++ "aload_1\n"
+new_adt tag value_str = "ldc \"" ++ tag ++ "\"\n"
+						++ value_str
+						++ "iconst_0\n"
+						++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
 
 
 adt_class :: String
@@ -115,9 +105,28 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
 			++ ".method public <init>()V\n"
 			++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
   			++ "return\n.end method\n\n"
+ -- String toString()
   			++ ".method public toString()Ljava/lang/String;\n"
 			++ "aload_0\n"
  			++ "getfield Adt/tag Ljava/lang/String;\n"
+  			++ "areturn\n.end method\n\n"
+ -- Adt create(String, int, int)
+   			++ ".method public static create(Ljava/lang/String;II)LAdt;\n"
+   			++ ".limit stack 10\n.limit locals 10\n"
+			++ "new Adt\n"
+	      	++ "dup\n"
+		  	++ "invokespecial Adt/<init>()V\n"
+		  	++ "astore_3\n"
+		  	++ "aload_3\n"
+		  	++ "aload_0\n"
+			++ "putfield Adt/tag Ljava/lang/String;\n"
+		  	++ "aload_3\n"
+		  	++ "iload_1\n"
+		  	++ "putfield Adt/value I\n"
+		  	++ "aload_3\n"
+		  	++ "iload 2\nanewarray Adt\n"
+		  	++ "putfield Adt/arr [LAdt;\n"
+		  	++ "aload_3\n"
   			++ "areturn\n.end method\n\n"
 
 preamble_main :: String
