@@ -12,8 +12,10 @@ data CExpr = CEInt Int
 			 | CENewVar CId CType CExpr
 			 | CExprs [CExpr]
 			 | CCase CExpr [CAlt]
+			 | CTypedef CId CConstr [CConstr]
 
 data CAlt = CAlt CType CExpr 
+data CConstr = CConstr CId [CType]
 
 op_func :: String -> String
 op_func "+" = "iadd"
@@ -73,7 +75,15 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 									compiled = (compile (fst res1) (CExprs es) )
 									res1 = (compile env e1)
 
-compile env (CCase e1 v1) = (env, "")
+--compile env (CCase e1 v1) = (env, "")
+--compile env (CCase (CEInt i1) [(CAlt "int" e2)] ) = ([],"")--compile env e2 
+compile env (CCase (CEInt i1) [(CAlt "int" e2)] ) = compile env e2 
+compile env (CCase (CEString i1) [(CAlt "string" e2)] ) = compile env e2 
+compile env (CCase (CEBool i1) [(CAlt "bool" e2)] ) = compile env e2 
+
+	--( (track_stack "int" env), (compile_str env (CEOp e1 "==" e2) ) ++ "") 
+--compile env (CCase e1 [(CAlt "int" e2)] ) = ( (track_stack "int" env), (compile_str env (CEOp e1 "==" e2) ) ++ "") 
+--(CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
 
 loop_add_members :: Env -> [CExpr] -> String
 loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
@@ -93,7 +103,7 @@ add_member_inline = "invokevirtual Adt/add(LAdt;)V\n"
 
 printing_code :: Env -> String
 printing_code env = (store_instr type1 ) ++ " " ++ new_local_id ++ "\n"
-				  	++"getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
+				  	++"getstatic java/lang/System/out Ljava/io/PrintStream;\n"
  				  	++ (load_instr type1 ) ++ " " ++ new_local_id ++ "\n"
   				  	++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
   				  		where 
@@ -160,14 +170,14 @@ static_main_start =
 					".method public static compare_ints(II)I\n"
 					++ ".limit stack 3\n.limit locals 3\n"
 					++ "iload_0\niload_1\n"
-					++ "if_icmpne <false_equal_if>\niconst_1\n goto <end_equal_if>\n<false_equal_if>:\niconst_0\n<end_equal_if>:\n"
-					++ "ireturn\n.end method\n"
+					++ "if_icmpne <false_equal_if>\niconst_1\ngoto <end_equal_if>\n<false_equal_if>:\niconst_0\n<end_equal_if>:\n"
+					++ "ireturn\n.end method\n\n"
 -- int less_int_than(int, int)
 					++ ".method public static less_int_than(II)I\n"
 					++ ".limit stack 3\n.limit locals 3\n"
 					++ "iload_0\niload_1\n"
-					++ "if_icmpge <false_less_if>\niconst_1\n goto <end_less_if>\n<false_less_if>:\niconst_0\n<end_less_if>:\n"
-					++ "ireturn\n.end method\n"
+					++ "if_icmpge <false_less_if>\niconst_1\ngoto <end_less_if>\n<false_less_if>:\niconst_0\n<end_less_if>:\n"
+					++ "ireturn\n.end method\n\n\n"
 -- public static main(String[] args)
 					++ ".method public static main([Ljava/lang/String;)V\n"
   					++ ".limit stack 100\n.limit locals 100\n"
@@ -239,8 +249,9 @@ test12 = (CEOp (CEInt 10) "==" (CEInt 11))
 test13 = (CEOp (CEInt 11) "<" (CEInt 11))
 
 -- testing simple case statement
--- case (int 0) of (int 0) -> (int 1) | (int 1) -> (int 0)
-example1 = (CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
+-- case (int 0) of int-> (int 1) | string -> (int 0)
+example1 = (CCase (CEInt 0) [(CAlt "int" (CEInt 1) ) ] )
+	--, (CAlt "string" (CEInt 4) ) ] )
 
 
 --------------------------------------------------------------------------------------------------------
