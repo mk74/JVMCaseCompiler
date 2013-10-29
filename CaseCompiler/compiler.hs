@@ -55,7 +55,7 @@ compile env (CEString str1) = ( (track_stack "string" env), "ldc \"" ++ str1 ++ 
 compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_local_var id1 env) ++ "\n")
 								where type1 = get_type id1 env
 
-compile env (CConst id1 e1) = (env, (new_adt id1 (compile_str env e1) ) )
+compile env (CConst id1 e1) = (env, (new_adt id1 (compile_str env e1) 0) )
 
 
 compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
@@ -92,10 +92,10 @@ boolean_value = "invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;"
 -- creates new object of ADT class
 -- gets tag and jvm code responsible for creating value
 -- after this function new object is on the top of the stack
-new_adt :: String -> String -> String
-new_adt tag value_str = "ldc \"" ++ tag ++ "\"\n"
+new_adt :: String -> String -> Int -> String
+new_adt tag value_str i1 = "ldc \"" ++ tag ++ "\"\n"
 						++ value_str
-						++ "iconst_0\n"
+						++ "sipush " ++ show i1 ++ "\n"
 						++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
 
 
