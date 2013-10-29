@@ -71,7 +71,7 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 									res1 = (compile env e1)
 
 loop_add_members :: Env -> [CExpr] -> String
-loop_add_members env [(CEInt i1)] = create_adt_inline "int" i1 0
+loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
 loop_add_members env [e1] = (compile_str env e1) ++ (add_member_inline)
 loop_add_members env (e1:es) = (compile_str env e1) ++ (add_member_inline) ++ (loop_add_members env es)
 
@@ -212,7 +212,7 @@ test13 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test11)
+			where compiled = (compile start_env test12)
 
 
 
