@@ -102,6 +102,9 @@ new_adt tag value_str = "new Adt\n"
 		  				++ value_str
 		  				++ "putfield Adt/value I\n"
 		  				++ "aload_1\n"
+		  				++ "iconst_2\nanewarray Adt\n"
+		  				++ "putfield Adt/arr [LAdt;\n"
+		  				++ "aload_1\n"
 
 
 adt_class :: String
