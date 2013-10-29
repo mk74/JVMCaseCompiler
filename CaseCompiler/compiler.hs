@@ -11,6 +11,9 @@ data CExpr = CEInt Int
 			 | CEOp CExpr COp CExpr
 			 | CENewVar CId CType CExpr
 			 | CExprs [CExpr]
+			 | CCase CExpr [CAlt]
+
+data CAlt = CAlt CType CExpr 
 
 op_func :: String -> String
 op_func "+" = "iadd"
@@ -70,6 +73,8 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 								where 
 									compiled = (compile (fst res1) (CExprs es) )
 									res1 = (compile env e1)
+
+compile env (CCase e1 v1) = (env, "")
 
 loop_add_members :: Env -> [CExpr] -> String
 loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
@@ -211,6 +216,8 @@ test10 = (CExprs [(CENewVar "sth" "bool" (CEBool False) ) , (CEId "sth")] )
 --testing data constructor(recursive data type)
 -- Age {Person 10} 10
 test11 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
+
+--test12 = (CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
 
 
 --------------------------
