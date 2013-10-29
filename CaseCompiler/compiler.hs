@@ -7,7 +7,7 @@ data CExpr = CEInt Int
 			 | CEBool Bool
 			 | CEString String
 			 | CEId CId
-			 | CConst CId CExpr --TODO: exprs at the end
+			 | CConst CId [CExpr]
 			 | CEOp CExpr COp CExpr
 			 | CENewVar CId CType CExpr
 			 | CExprs [CExpr]
@@ -55,7 +55,8 @@ compile env (CEString str1) = ( (track_stack "string" env), "ldc \"" ++ str1 ++ 
 compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_local_var id1 env) ++ "\n")
 								where type1 = get_type id1 env
 
-compile env (CConst id1 e1) = (env, (new_adt id1 (compile_str env e1) 0) )
+compile env (CConst id1 [e1]) = (env, (new_adt (compile_str env e1)) )
+compile env (CConst id1 (e1:es)) = (env, (new_adt (compile_str env e1)) ++ (compile_str env (CExprs es) ) )
 
 
 compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
@@ -71,14 +72,17 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 									compiled = (compile (fst res1) (CExprs es) )
 									res1 = (compile env e1)
 
+new_adt :: String -> String
+new_adt compiled = "CREATE OBJECT\n " ++ compiled ++ "\nCONNECT\n"
+
 -- creates new object of ADT class
 -- gets tag and jvm code responsible for creating value
 -- after this function new object is on the top of the stack
-new_adt :: String -> String -> Int -> String
-new_adt tag value_str i1 = "ldc \"" ++ tag ++ "\"\n"
-						++ value_str
-						++ "sipush " ++ show i1 ++ "\n"
-						++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
+--new_adt :: String -> String -> Int -> String
+--new_adt tag value_str i1 = "ldc \"" ++ tag ++ "\"\n"
+--						++ value_str
+--						++ "sipush " ++ show i1 ++ "\n"
+--						++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
 
 
 printing_code :: Env -> String
@@ -179,7 +183,7 @@ test5 =  (CExprs [(CENewVar "sth" "int" (CEInt 10)), (CENewVar "sth2" "int" (CEO
 
 --testing constructor
 --sth:: Age = Age 3; sth
-test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEId "sth")] )
+--test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEId "sth")] )
 
 --testing string variable
 --"Something"
@@ -197,10 +201,14 @@ test9 = (CExprs [(CENewVar "sth" "bool" (CEBool True) ) , (CEId "sth")] )
 --sth:: bool = False; sth
 test10 = (CExprs [(CENewVar "sth" "bool" (CEBool False) ) , (CEId "sth")] )
 
+test11 = (CConst "Age" [ (CEInt 10) ] )
+
+test12 = (CConst "Age" [ (CConst "Age" [(CEInt 10)] ), (CEInt 10) ] )
+
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test6)
+			where compiled = (compile start_env test12)
 
 
 
