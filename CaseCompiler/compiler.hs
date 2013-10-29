@@ -18,7 +18,7 @@ op_func "-" = "isub"
 op_func "*" = "imul"
 op_func "/" = "idiv"
 
---op_func "<" = 
+--op_func "<" =  
 --op_func "==" = ""
 --op_func "and" = "iand"
 --op_func "or" = "ior"
