@@ -51,8 +51,10 @@ compile env (CEInt i1) = ( (track_stack "int" env), "sipush " ++ show i1 ++ "\n"
 compile env (CEBool True) = ( (track_stack "bool" env), "iconst_1\n" ++ boolean_value ++ "\n")
 compile env (CEBool False) = ( (track_stack "bool" env), "iconst_0\n" ++ boolean_value ++ "\n")
 compile env (CEString str1) = ( (track_stack "string" env), "ldc \"" ++ str1 ++ "\"\n")
+
 compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_local_var id1 env) ++ "\n")
 								where type1 = get_type id1 env
+
 compile env (CConst id1 e1) = (env, (new_adt id1 (compile_str env e1) ) )
 
 
