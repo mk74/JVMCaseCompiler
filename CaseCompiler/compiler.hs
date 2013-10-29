@@ -55,8 +55,9 @@ compile env (CEString str1) = ( (track_stack "string" env), "ldc \"" ++ str1 ++ 
 compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_local_var id1 env) ++ "\n")
 								where type1 = get_type id1 env
 
-compile env (CConst id1 [e1]) = (env, (new_adt (compile_str env e1)) )
-compile env (CConst id1 (e1:es)) = (env, (new_adt (compile_str env e1)) ++ (compile_str env (CExprs es) ) )
+compile env (CConst id1 es) = (env, "CREATE:" ++ id1 ++ "\n" ++ (loop_add_members env id1 es) )
+--compile env (CConst id1 [e1]) = (env, (new_adt id1 (compile_str env e1)) )
+--compile env (CConst id1 (e1:es)) = (env, (new_adt id1 (compile_str env e1)) ++ (compile_str env (CExprs es) ) )
 
 
 compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
@@ -72,8 +73,12 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 									compiled = (compile (fst res1) (CExprs es) )
 									res1 = (compile env e1)
 
-new_adt :: String -> String
-new_adt compiled = "CREATE OBJECT\n " ++ compiled ++ "\nCONNECT\n"
+loop_add_members :: Env -> String -> [CExpr] -> String
+loop_add_members env id1 [e1] = (compile_str env e1) ++ "CONNECT:" ++ id1 ++ "\n"
+loop_add_members env id1 (e1:es) = (compile_str env e1) ++ "CONNECT:" ++ id1 ++ "\n" ++ (loop_add_members env id1 es)
+
+--new_adt :: String -> String -> String
+--new_adt tagname compiled = "CREATE OBJECT: " ++ tagname ++ "\n " ++ compiled ++ "\nCONNECT" ++ tagname ++ "\n"
 
 -- creates new object of ADT class
 -- gets tag and jvm code responsible for creating value
@@ -203,7 +208,9 @@ test10 = (CExprs [(CENewVar "sth" "bool" (CEBool False) ) , (CEId "sth")] )
 
 test11 = (CConst "Age" [ (CEInt 10) ] )
 
-test12 = (CConst "Age" [ (CConst "Age" [(CEInt 10)] ), (CEInt 10) ] )
+test12 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
+
+test13 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 
 main = do
 		writeFile "adt.j" adt_class
