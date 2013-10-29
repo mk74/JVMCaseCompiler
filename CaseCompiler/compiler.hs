@@ -22,9 +22,8 @@ op_func "*" = "imul"
 op_func "/" = "idiv"
 op_func "==" = "invokestatic Program/compare_ints(II)I\n"
 op_func "<" = "invokestatic Program/less_int_than(II)I\n"
- 
---op_func "and" = "iand"
---op_func "or" = "ior"
+op_func "and" = "iand"
+op_func "or" = "ior"
 
 store_instr :: String -> String
 store_instr "int" = "istore "
@@ -169,6 +168,8 @@ static_main_start =
 					++ "iload_0\niload_1\n"
 					++ "if_icmpge <false_less_if>\niconst_1\n goto <end_less_if>\n<false_less_if>:\niconst_0\n<end_less_if>:\n"
 					++ "ireturn\n.end method\n"
+-- int and_bools(boolean)
+-- public static main(String[] args)
 					++ ".method public static main([Ljava/lang/String;)V\n"
   					++ ".limit stack 100\n.limit locals 100\n"
 
@@ -189,7 +190,7 @@ test0 = (CEInt 5)
 test1 = (CEOp (CEInt 10) "+" (CEInt 15))
 
 --testing AND operator
---test2 = (CEOp (CEInt 2) "and" (CEInt 1))
+test2 = (CEOp (CEInt 2) "and" (CEInt 1))
 
 
 --testing nested arithmetic operations
@@ -230,8 +231,12 @@ test10 = (CExprs [(CENewVar "sth" "bool" (CEBool False) ) , (CEId "sth")] )
 -- Age {Person 10} 10
 test11 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 
+--testing == operator
+-- 10 == 11
 test12 = (CEOp (CEInt 10) "==" (CEInt 11))
 
+--testing < operator
+-- 11 < 11
 test13 = (CEOp (CEInt 11) "<" (CEInt 11))
 
 --test12 = (CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
