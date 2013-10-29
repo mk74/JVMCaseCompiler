@@ -55,7 +55,7 @@ compile env (CEString str1) = ( (track_stack "string" env), "ldc \"" ++ str1 ++ 
 compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_local_var id1 env) ++ "\n")
 								where type1 = get_type id1 env
 
-compile env (CConst id1 es) = (env, (create_adt_inline id1 (length es) ) ++ (loop_add_members env id1 es) )
+compile env (CConst id1 es) = (env, (create_adt_inline id1 (length es) ) ++ (loop_add_members env es) )
 --compile env (CConst id1 [e1]) = (env, (new_adt id1 (compile_str env e1)) )
 --compile env (CConst id1 (e1:es)) = (env, (new_adt id1 (compile_str env e1)) ++ (compile_str env (CExprs es) ) )
 
@@ -73,15 +73,17 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 									compiled = (compile (fst res1) (CExprs es) )
 									res1 = (compile env e1)
 
-loop_add_members :: Env -> String -> [CExpr] -> String
-loop_add_members env id1 [e1] = (compile_str env e1) ++ (add_member_inline)
-loop_add_members env id1 (e1:es) = (compile_str env e1) ++ (add_member_inline) ++ (loop_add_members env id1 es)
+loop_add_members :: Env -> [CExpr] -> String
+loop_add_members env [(CEInt i1)] = ""
+loop_add_members env [e1] = (compile_str env e1) ++ (add_member_inline)
+loop_add_members env (e1:es) = (compile_str env e1) ++ (add_member_inline) ++ (loop_add_members env es)
 
 create_adt_inline :: String -> Int -> String
 create_adt_inline tag n = "ldc \"" ++ tag ++ "\"\n"
 						  ++ "sipush 1\n"
 						  ++ "sipush " ++ show n ++ "\n"
 						  ++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
+						  ++ (concat ( replicate n "dup\n" ))
 
 add_member_inline :: String  -- -> String
 add_member_inline = "invokevirtual Adt/add(LAdt;)V\n"
@@ -218,14 +220,14 @@ test10 = (CExprs [(CENewVar "sth" "bool" (CEBool False) ) , (CEId "sth")] )
 
 test11 = (CConst "Age" [ (CEInt 10) ] )
 
-test12 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
+test12 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] )] )
 
 test13 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test11)
+			where compiled = (compile start_env test12)
 
 
 
