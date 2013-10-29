@@ -73,11 +73,13 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 
 printing_code :: Env -> String
-printing_code env = (store_instr type1 ) ++ " 99\n"
+printing_code env = (store_instr type1 ) ++ " " ++ new_local_id ++ "\n"
 				  	++"getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
- 				  	++ (load_instr type1 ) ++ " 99\n"
+ 				  	++ (load_instr type1 ) ++ " " ++ new_local_id ++ "\n"
   				  	++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
-  				  		where type1 = fst (find "" env)
+  				  		where 
+  				  			type1 = fst (find "" env)
+  				  			new_local_id = show ( (length env) + 1)
 
 println_signature :: String -> String
 println_signature "int" = "I"
@@ -123,7 +125,7 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
 		  	++ "putfield Adt/arr [LAdt;\n"
 		  	++ "aload_3\n"
   			++ "areturn\n.end method\n\n"
--- void add(Adt)
+ -- void add(Adt)
 			++ ".method public add(LAdt;)V\n"
    			++ ".limit stack 10\n.limit locals 10\n"
    			++ "aload_0\n"
