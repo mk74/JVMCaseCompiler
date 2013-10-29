@@ -71,6 +71,15 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 									compiled = (compile (fst res1) (CExprs es) )
 									res1 = (compile env e1)
 
+-- creates new object of ADT class
+-- gets tag and jvm code responsible for creating value
+-- after this function new object is on the top of the stack
+new_adt :: String -> String -> Int -> String
+new_adt tag value_str i1 = "ldc \"" ++ tag ++ "\"\n"
+						++ value_str
+						++ "sipush " ++ show i1 ++ "\n"
+						++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
+
 
 printing_code :: Env -> String
 printing_code env = (store_instr type1 ) ++ " " ++ new_local_id ++ "\n"
@@ -88,16 +97,6 @@ println_signature _ = "Ljava/lang/Object;"
 
 boolean_value ::String
 boolean_value = "invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;"
-
--- creates new object of ADT class
--- gets tag and jvm code responsible for creating value
--- after this function new object is on the top of the stack
-new_adt :: String -> String -> Int -> String
-new_adt tag value_str i1 = "ldc \"" ++ tag ++ "\"\n"
-						++ value_str
-						++ "sipush " ++ show i1 ++ "\n"
-						++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
-
 
 adt_class :: String
 adt_class = ".class public Adt\n.super java/lang/Object\n\n"
