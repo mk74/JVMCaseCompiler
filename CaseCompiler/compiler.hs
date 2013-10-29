@@ -168,7 +168,6 @@ static_main_start =
 					++ "iload_0\niload_1\n"
 					++ "if_icmpge <false_less_if>\niconst_1\n goto <end_less_if>\n<false_less_if>:\niconst_0\n<end_less_if>:\n"
 					++ "ireturn\n.end method\n"
--- int and_bools(boolean)
 -- public static main(String[] args)
 					++ ".method public static main([Ljava/lang/String;)V\n"
   					++ ".limit stack 100\n.limit locals 100\n"
@@ -239,7 +238,9 @@ test12 = (CEOp (CEInt 10) "==" (CEInt 11))
 -- 11 < 11
 test13 = (CEOp (CEInt 11) "<" (CEInt 11))
 
---test12 = (CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
+-- testing simple case statement
+-- case (int 0) of (int 0) -> (int 1) | (int 1) -> (int 0)
+example1 = (CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
 
 
 --------------------------
@@ -248,7 +249,7 @@ test13 = (CEOp (CEInt 11) "<" (CEInt 11))
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test13)
+			where compiled = (compile start_env example1)
 
 
 --------------------------
