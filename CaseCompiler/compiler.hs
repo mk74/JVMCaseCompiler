@@ -21,8 +21,8 @@ op_func "-" = "isub"
 op_func "*" = "imul"
 op_func "/" = "idiv"
 op_func "==" = "invokestatic Program/compare_ints(II)I\n"
-
---op_func "<" =  
+op_func "<" = "invokestatic Program/less_int_than(II)I\n"
+ 
 --op_func "and" = "iand"
 --op_func "or" = "ior"
 
@@ -156,10 +156,18 @@ preamble_main = ".class public Program\n.super java/lang/Object\n\n"
   				++ "return\n.end method\n\n"
 
 static_main_start :: String
-static_main_start = ".method public static compare_ints(II)I\n"
+static_main_start = 
+-- int compare_ints(int, int)
+					".method public static compare_ints(II)I\n"
 					++ ".limit stack 3\n.limit locals 3\n"
 					++ "iload_0\niload_1\n"
 					++ "if_icmpne <false_equal_if>\niconst_1\n goto <end_equal_if>\n<false_equal_if>:\niconst_0\n<end_equal_if>:\n"
+					++ "ireturn\n.end method\n"
+-- int less_int_than(int, int)
+					++ ".method public static less_int_than(II)I\n"
+					++ ".limit stack 3\n.limit locals 3\n"
+					++ "iload_0\niload_1\n"
+					++ "if_icmpge <false_less_if>\niconst_1\n goto <end_less_if>\n<false_less_if>:\niconst_0\n<end_less_if>:\n"
 					++ "ireturn\n.end method\n"
 					++ ".method public static main([Ljava/lang/String;)V\n"
   					++ ".limit stack 100\n.limit locals 100\n"
@@ -224,6 +232,8 @@ test11 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 
 test12 = (CEOp (CEInt 10) "==" (CEInt 11))
 
+test13 = (CEOp (CEInt 11) "<" (CEInt 11))
+
 --test12 = (CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
 
 
@@ -233,7 +243,7 @@ test12 = (CEOp (CEInt 10) "==" (CEInt 11))
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test12)
+			where compiled = (compile start_env test13)
 
 
 --------------------------
