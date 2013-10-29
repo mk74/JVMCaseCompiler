@@ -74,10 +74,10 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 printing_code :: Env -> String
 printing_code env = (store_instr type1 ) ++ " 99\n"
-				  ++"getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
- 				  ++ (load_instr type1 ) ++ " 99\n"
-  				  ++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
-  				  	where type1 = fst (find "" env)
+				  	++"getstatic     java/lang/System/out Ljava/io/PrintStream;\n"
+ 				  	++ (load_instr type1 ) ++ " 99\n"
+  				  	++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
+  				  		where type1 = fst (find "" env)
 
 println_signature :: String -> String
 println_signature "int" = "I"
@@ -119,9 +119,9 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
 
 preamble_main :: String
 preamble_main = ".class public Program\n.super java/lang/Object\n\n"
-			++ ".method public <init>()V\n"
-			++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
-  			++ "return\n.end method\n\n"
+				++ ".method public <init>()V\n"
+				++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
+  				++ "return\n.end method\n\n"
 
 static_main_start :: String
 static_main_start = ".method public static main([Ljava/lang/String;)V\n"
