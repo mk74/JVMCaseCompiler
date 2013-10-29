@@ -48,16 +48,17 @@ compile_str env expr = snd (compile env expr)
 
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = ( (track_stack "int" env), "sipush " ++ show i1 ++ "\n")
-compile env (CEBool True) = ( (track_stack "bool" env), "iconst_1\n" ++ boolean_value ++ "\n")
-compile env (CEBool False) = ( (track_stack "bool" env), "iconst_0\n" ++ boolean_value ++ "\n")
+compile env (CEBool True) = ( (track_stack "object" env), "iconst_1\n" ++ boolean_value ++ "\n")
+compile env (CEBool False) = ( (track_stack "object" env), "iconst_0\n" ++ boolean_value ++ "\n")
 compile env (CEString str1) = ( (track_stack "string" env), "ldc \"" ++ str1 ++ "\"\n")
 
 compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_local_var id1 env) ++ "\n")
 								where type1 = get_type id1 env
 
-compile env (CConst id1 es) = (env, (create_adt_inline id1 0 (length es) ) ++ (loop_add_members env es) )
+compile env (CConst id1 es) = ( (track_stack "object" env), (create_adt_inline id1 0 (length es) ) ++ (loop_add_members env es) )
 
-compile env (CEOp e1 op1 e2) = (env, (compile_str env e1) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
+compile env (CEOp e1 op1 e2) = ( (fst compiled), (snd compiled) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
+									where compiled = (compile env e1)
 
 compile env (CENewVar id1 t1 e1) =  (env', (compile_str env e1) ++ (store_instr t1) ++ show ((length env) + 1) ++ "\n")
 														where env' = [(id1, (t1, (length env) + 1) )] ++ env
@@ -159,6 +160,10 @@ static_main_end = "return\n.end method"
 jasminWrapper :: String -> String
 jasminWrapper prog_code = preamble_main ++ static_main_start ++ prog_code ++ static_main_end
 
+--------------------------
+-- Unit tests
+--------------------------
+
 test0 = (CEInt 5)
 
 --testing addition two numbers
@@ -166,7 +171,7 @@ test0 = (CEInt 5)
 test1 = (CEOp (CEInt 10) "+" (CEInt 15))
 
 --testing AND operator
-test2 = (CEOp (CEInt 2) "and" (CEInt 1))
+--test2 = (CEOp (CEInt 2) "and" (CEInt 1))
 
 
 --testing nested arithmetic operations
@@ -185,7 +190,7 @@ test5 =  (CExprs [(CENewVar "sth" "int" (CEInt 10)), (CENewVar "sth2" "int" (CEO
 
 --testing constructor
 --sth:: Age = Age 3; sth
---test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" (CEInt 3) ) ), (CEId "sth")] )
+test6 = (CExprs [(CENewVar "sth" "Age"  (CConst "Age" [(CEInt 3)] ) ), (CEId "sth")] )
 
 --testing string variable
 --"Something"
@@ -203,19 +208,23 @@ test9 = (CExprs [(CENewVar "sth" "bool" (CEBool True) ) , (CEId "sth")] )
 --sth:: bool = False; sth
 test10 = (CExprs [(CENewVar "sth" "bool" (CEBool False) ) , (CEId "sth")] )
 
-test11 = (CConst "Age" [ (CEInt 10) ] )
+--testing data constructor(recursive data type)
+-- Age {Person 10} 10
+test11 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 
-test12 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] )] )
 
-test13 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
-
+--------------------------
+--program's main functions
+--------------------------
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test12)
+			where compiled = (compile start_env test11)
 
 
-
+--------------------------
+--helper functions
+--------------------------
 find id env = case lookup id env of
 		   Just e -> e
 
