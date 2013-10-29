@@ -74,8 +74,8 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 									res1 = (compile env e1)
 
 loop_add_members :: Env -> String -> [CExpr] -> String
-loop_add_members env id1 [e1] = (compile_str env e1) ++ (add_member_inline id1)
-loop_add_members env id1 (e1:es) = (compile_str env e1) ++ (add_member_inline id1) ++ (loop_add_members env id1 es)
+loop_add_members env id1 [e1] = (compile_str env e1) ++ (add_member_inline)
+loop_add_members env id1 (e1:es) = (compile_str env e1) ++ (add_member_inline) ++ (loop_add_members env id1 es)
 
 create_adt_inline :: String -> Int -> String
 create_adt_inline tag n = "ldc \"" ++ tag ++ "\"\n"
@@ -83,8 +83,9 @@ create_adt_inline tag n = "ldc \"" ++ tag ++ "\"\n"
 						  ++ "sipush " ++ show n ++ "\n"
 						  ++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
 
-add_member_inline :: String -> String
-add_member_inline id1 = "CONNECT:" ++ id1 ++ "\n"
+add_member_inline :: String  -- -> String
+add_member_inline = "invokevirtual Adt/add(LAdt;)V\n"
+	--"CONNECT:" ++ id1 ++ "\n"
 
 --new_adt :: String -> String -> String
 --new_adt tagname compiled = "CREATE OBJECT: " ++ tagname ++ "\n " ++ compiled ++ "\nCONNECT" ++ tagname ++ "\n"
@@ -224,7 +225,7 @@ test13 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test12)
+			where compiled = (compile start_env test11)
 
 
 
