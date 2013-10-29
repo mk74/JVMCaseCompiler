@@ -20,9 +20,9 @@ op_func "+" = "iadd"
 op_func "-" = "isub"
 op_func "*" = "imul"
 op_func "/" = "idiv"
+op_func "==" = "if_icmpne <false>\niconst_1\n goto <end>\n<false>:\niconst_0\n<end>:\n"
 
 --op_func "<" =  
---op_func "==" = ""
 --op_func "and" = "iand"
 --op_func "or" = "ior"
 
@@ -217,6 +217,7 @@ test10 = (CExprs [(CENewVar "sth" "bool" (CEBool False) ) , (CEId "sth")] )
 -- Age {Person 10} 10
 test11 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 
+test12 = (CEOp (CEInt 10) "==" (CEInt 11))
 --test12 = (CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
 
 
@@ -226,7 +227,7 @@ test11 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test11)
+			where compiled = (compile start_env test12)
 
 
 --------------------------
