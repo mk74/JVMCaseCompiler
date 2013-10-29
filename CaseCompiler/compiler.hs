@@ -20,7 +20,7 @@ op_func "+" = "iadd"
 op_func "-" = "isub"
 op_func "*" = "imul"
 op_func "/" = "idiv"
-op_func "==" = "if_icmpne <false>\niconst_1\n goto <end>\n<false>:\niconst_0\n<end>:\n"
+op_func "==" = "invokestatic Program/compare_ints(II)I\n"
 
 --op_func "<" =  
 --op_func "and" = "iand"
@@ -156,11 +156,16 @@ preamble_main = ".class public Program\n.super java/lang/Object\n\n"
   				++ "return\n.end method\n\n"
 
 static_main_start :: String
-static_main_start = ".method public static main([Ljava/lang/String;)V\n"
+static_main_start = ".method public static compare_ints(II)I\n"
+					++ ".limit stack 3\n.limit locals 3\n"
+					++ "iload_0\niload_1\n"
+					++ "if_icmpne <false_equal_if>\niconst_1\n goto <end_equal_if>\n<false_equal_if>:\niconst_0\n<end_equal_if>:\n"
+					++ "ireturn\n.end method\n"
+					++ ".method public static main([Ljava/lang/String;)V\n"
   					++ ".limit stack 100\n.limit locals 100\n"
 
 static_main_end :: String
-static_main_end = "return\n.end method"
+static_main_end = "return\n.end method\n"
 
 jasminWrapper :: String -> String
 jasminWrapper prog_code = preamble_main ++ static_main_start ++ prog_code ++ static_main_end
@@ -218,6 +223,7 @@ test10 = (CExprs [(CENewVar "sth" "bool" (CEBool False) ) , (CEId "sth")] )
 test11 = (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )
 
 test12 = (CEOp (CEInt 10) "==" (CEInt 11))
+
 --test12 = (CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
 
 
