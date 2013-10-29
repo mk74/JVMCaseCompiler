@@ -128,6 +128,18 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
 		  	++ "putfield Adt/arr [LAdt;\n"
 		  	++ "aload_3\n"
   			++ "areturn\n.end method\n\n"
+-- void add(Adt )
+			++ ".method public add(LAdt;)V\n"
+   			++ ".limit stack 10\n.limit locals 10\n"
+   			++ "aload_0\n"
+   			++ "getfield Adt/arr [LAdt;\n"
+   			++ "aload_0\n"
+   			++ "getfield Adt/index I\n"
+   			++ "aload_1\naastore\naload_0\ndup\n"
+   			++ "getfield Adt/index I\n"
+   			++ "iconst_1\niadd\n"
+   			++ "putfield Adt/index I\n"
+   			++ "return\n.end method\n\n"
 
 preamble_main :: String
 preamble_main = ".class public Program\n.super java/lang/Object\n\n"
