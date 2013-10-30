@@ -93,8 +93,8 @@ compile env (CEOp e1 op1 e2) = ( env', (snd compiled) ++ (compile_str env e2) ++
 										compiled = (compile env e1)
 										env' = (fst compiled)
 
-compile env (CENewVar id1 t1 e1) =  (env', (compile_str env e1) ++ (store_instr t1) ++ show ((length env) + 1) ++ "\n")
-														where env' = [(id1, (t1, (length env) + 1) )] ++ env
+compile env (CENewVar id1 t1 e1) =  (env', (compile_str env e1) ++ (store_instr t1) ++ show ((length env)) ++ "\n")
+														where env' = [(id1, (t1, (length env)) )] ++ env
 
 compile env (CExprs [e1]) = (fst compiled, snd compiled)
 								where 
@@ -106,19 +106,27 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
-compile env (CCase e cavs) = ( (fst compiled), (snd compiled) ++ (mult_dup ( (length cavs) -1) ) ++  (loop_cases env cavs 0) ++ case_statement_end )
-								where compiled = (compile env e)
+compile env (CCase e cavs) = ( (fst compiled), (snd compiled) ++ (mult_dup ( (length cavs) -1) ) ++  
+							   (loop_cases env' cavs 0) ++ (case_statement_end depth) )
+								where 
+									compiled = (compile env e)
+									depth = get_depth env'
+									env' = increase_depth (fst compiled)
 
 
 
 loop_cases :: Env -> [CAlt] -> Int -> String
-loop_cases env [(CAltVal e_cond e_exec)] i = (compile_str env e_cond) ++ "if_icmpne <default_case>\n" ++ (compile_str env e_exec) ++ "goto <end_case>\n"
-loop_cases env ((CAltVal e_cond e_exec):es) i = (compile_str env e_cond) ++ "if_icmpne <case_" ++ show i ++ ">\n" ++ (mult_pop (length es) ) 
-											  ++ (compile_str env e_exec) 
-											  ++ "goto <end_case>\n<case_" ++ show i ++ ">:\n" ++ (loop_cases env es (i+1) )
+loop_cases env [(CAltVal e_cond e_exec)] i = (compile_str env e_cond) ++ "if_icmpne <default_case_" ++ show depth ++ ">\n" 
+											 ++ (compile_str env e_exec) ++ "goto <end_case_" ++ show depth ++ ">\n"
+												where depth = get_depth env
+loop_cases env ((CAltVal e_cond e_exec):es) i = (compile_str env e_cond) ++ "if_icmpne <case_" ++ show depth ++ "_" ++ show i ++ ">\n" 
+													++ (mult_pop (length es) ) ++ (compile_str env e_exec) 
+											     ++ "goto <end_case_" ++ show depth ++ ">\n<case_" ++ show depth ++ "_" ++ show i ++ ">:\n" 
+											     ++ (loop_cases env es (i+1) )
+											  	where depth = get_depth env
 
-case_statement_end :: String
-case_statement_end = "<default_case>:\nsipush 1\n<end_case>:\n"
+case_statement_end :: Int -> String
+case_statement_end depth = "<default_case_" ++ show depth ++ ">:\nsipush 1\n<end_case_" ++ show depth ++ ">:\n"
 
 loop_add_members :: Env -> [CExpr] -> String
 loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
@@ -144,7 +152,7 @@ printing_code env = (store_instr type1 ) ++ " " ++ new_local_id ++ "\n"
   				  	++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
   				  		where 
   				  			type1 = get_stack_trace env
-  				  			new_local_id = show ( (length env) + 1)
+  				  			new_local_id = show ( (length env))
 
 println_signature :: String -> String
 println_signature "int" = "I"
@@ -315,16 +323,6 @@ test17 = (CCase (CEInt 0) [(CAltVal (CEInt 1)
 						  ] 
 		  )
 
-test17x = (CCase (CEInt 0) [(CAltVal (CEInt 1) (CEInt 10)
-						   ),
-							(CAltVal (CEInt 0) 
-								(CCase (CEInt 1) 
-									[(CAltVal (CEInt 0) (CEInt 1) ), 
-									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
-								)  
-						   )
-						  ] 
-		  )
 --testing simple ADT-based case statement
 test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10), (CEInt 4) ] ) ),
 					(CEInt 3)])
@@ -345,7 +343,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test17x)
+			where compiled = (compile start_env test17)
 
 
 --------------------------------------------------------------------------------------------------------
