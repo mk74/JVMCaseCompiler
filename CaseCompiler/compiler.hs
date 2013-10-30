@@ -12,10 +12,10 @@ data CExpr = CEInt Int
 			 | CENewVar CId CType CExpr
 			 | CExprs [CExpr]
 			 | CCase CExpr [CAlt]
-			 | CTypedef CId CConstr [CConstr]
+			 | CFakeTypedef CId CFakeConstr [CFakeConstr]
 
 data CAlt = CAlt CType CExpr 
-data CConstr = CConstr CId [CType]
+data CFakeConstr = CFakeConstr CId [CType]
 
 op_func :: String -> String
 op_func "+" = "iadd"
@@ -74,6 +74,8 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 								where 
 									compiled = (compile (fst res1) (CExprs es) )
 									res1 = (compile env e1)
+
+compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
 --compile env (CCase e1 v1) = (env, "")
 --compile env (CCase (CEInt i1) [(CAlt "int" e2)] ) = ([],"")--compile env e2 
@@ -253,6 +255,11 @@ test13 = (CEOp (CEInt 11) "<" (CEInt 11))
 example1 = (CCase (CEInt 0) [(CAlt "int" (CEInt 1) ) ] )
 	--, (CAlt "string" (CEInt 4) ) ] )
 
+--testing simple typedef/new variable example
+-- type Time = Hour int | Min int; t :: Time = Min 2; t }
+example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeConstr "min" ["int"] ) ]), 
+					(CENewVar "t" "Time" ( CConst "Min" [(CEInt 2)] ) ), 
+					(CEId "t")])
 
 --------------------------------------------------------------------------------------------------------
 --program's main functions
