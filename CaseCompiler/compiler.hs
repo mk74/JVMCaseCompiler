@@ -13,7 +13,7 @@ data CExpr = CEInt Int
 			 | CExprs [CExpr]
 			 | CCase CExpr [CAlt]
 			 | CFakeTypedef CId CFakeConstr [CFakeConstr]
---			 | CHelpNext (CId id)
+			 | CHelpNext
 
 data CAlt = CAltVal CExpr CExpr
 			| CAltADT CType [CId] CExpr
@@ -107,6 +107,8 @@ compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++ (loop_
 									case_n = get_case_n env'
 									env' = (track_stack "int" (increase_case_n (fst (compile env e) )) )
 
+compile env (CHelpNext) = (env, "invokevirtual Adt/next()I\n")
+
 
 
 loop_alts :: Env -> [CAlt] -> String
@@ -115,7 +117,7 @@ loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (len
 loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CEString type1) new_e1 0 equals_tag_inline
 											where 
 												ids_as_exprs = map CEId ids
-												new_e1 = (CExprs [ (CENewVar (head ids) "int" (CEInt 10)), e1])
+												new_e1 = (CExprs [ (CENewVar (head ids) "int" (CHelpNext) ), e1])
 
 equals_tag_inline :: String --we need swap/dup_x1 combination since we want to declare local variable if succesful
 equals_tag_inline = "swap\ndup_x1\nswap\ninvokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
@@ -215,21 +217,24 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
  			++ "aload_0\ngetfield Adt/tag Ljava/lang/String;\n"
  			++ "aload_1\ninvokevirtual java/lang/String/equals(Ljava/lang/Object;)Z\n"
  			++ "ireturn\n.end method\n\n"
- -- Adt next() //gets next child of this node
- 			++ ".method public next()LAdt;\n"
+ -- Adt next() //gets the value of node's next child
+ 			++ ".method public next()I\n"
  			++ ".limit stack 10\n.limit locals 10\n"
  			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
  			++ "aload_0\ngetfield Adt/index I\n"
- 			++ "aaload\nastore_1\naload_0\ndup\n"
+ 			++ "aaload\ngetfield Adt/value I\nistore_1\n"
+ 			++ "aload_0\ndup\n"
  			++ "getfield Adt/index I\n"
  			++ "iconst_1\niadd\nputfield Adt/index I\n"
  			++ "aload_0\ngetfield Adt/index I\n"
  			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
  			++ "arraylength\nif_icmpne <no_rewarding_next>\n"
  			++ "aload_0\niconst_0\nputfield Adt/index I\n"
- 			++ "<no_rewarding_next>:\naload_0\ngetfield Adt/arr [LAdt;\n"
- 			++ "aload_0\ngetfield Adt/index I\n"
- 			++ "aaload\nareturn\n.end method\n\n"
+ 			++ "<no_rewarding_next>:\niload_1\n"
+-- 			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
+-- 			++ "aload_0\ngetfield Adt/index I\n"
+-- 			++ "aaload\nareturn\n.end method\n\n"
+			++ "ireturn\n.end method\n\n"
 
 preamble_main :: String
 preamble_main = ".class public Program\n.super java/lang/Object\n\n"
@@ -370,14 +375,14 @@ test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CConst "Person" [(CEInt
 
 --testing simple ADT-based case statement
 test19 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
-				  		(CAltADT "Age" ["age1"] (CEInt 12) ) 
+				  		(CAltADT "Age" ["age1"] (CEId "age1") ) 
 				  					  ])
 				 ]
 		 )
 
 
 --testing simple ADT-based case statement
-test19x = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
+test20 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
 				  		(CAltADT "Age" ["age1"] (CEId "age1") ) 
 				  					  ])
 				 ]
@@ -390,7 +395,7 @@ test19x = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [
 --		(case (int 3) of 
 --				(int 1) -> (int 2) )
 --				(int 4) -> (int 4) )
-test20 = (CExprs [
+test21 = (CExprs [
 								(CCase (CEInt 1) 
 									[(CAltVal (CEInt 0) (CEInt 1) ), 
 									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
@@ -418,7 +423,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test19x)
+			where compiled = (compile start_env test19)
 
 
 --------------------------------------------------------------------------------------------------------
