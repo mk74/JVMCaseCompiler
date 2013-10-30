@@ -37,6 +37,10 @@ load_instr :: String -> String
 load_instr "int" = "iload "
 load_instr _ = "aload "
 
+
+--------------------------------------------------------------------------------------------------------
+--Env management functions: getting, type, keeping stack trace and depth
+---------------------------------------------------------------------------------------------------------
 get_type :: String -> Env -> String
 get_type id1 env = fst (find id1 env)
 
@@ -49,12 +53,29 @@ start_env = [("_depth", ("", 0)), ("_stack_trace", ("", -1) )]
 track_stack :: CType -> Env -> Env
 track_stack type1 env1 = (init env1) ++ [("_stack_trace", (type1, -1) )]
 
-find_track_stack :: Env -> CType
-find_track_stack env = fst (find "_stack_trace" env)
+stack_trace :: Env -> CType
+stack_trace env = fst (find "_stack_trace" env)
 
-compile_str :: Env ->CExpr -> String
-compile_str env expr = snd (compile env expr)
+get_depth :: Env -> Int
+get_depth env = snd (find "_depth" env)
 
+increase_depth :: Env -> Env
+increase_depth env = update_depth env (old_depth + 1) 
+						where
+							old_depth = get_depth env
+
+decrease_depth :: Env -> Env
+decrease_depth env = update_depth env (old_depth - 1) 
+						where
+							old_depth = get_depth env
+
+update_depth :: Env -> Int -> Env 
+update_depth env i1 = (init (init env)) ++ [("_depth", ("", i1) )] ++ [stack_track]
+						where stack_track = (last env)
+
+--------------------------------------------------------------------------------------------------------
+--Main compile function
+---------------------------------------------------------------------------------------------------------
 
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = ( (track_stack "int" env), "sipush " ++ show i1 ++ "\n")
@@ -67,7 +88,7 @@ compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_
 
 compile env (CConst id1 es) = ( (track_stack "object" env), (create_adt_inline id1 0 (length es) ) ++ (loop_add_members env es) )
 
-compile env (CEOp e1 op1 e2) = ( env', (snd compiled) ++ (compile_str env e2) ++ (op_func (find_track_stack env') op1) ++ "\n")
+compile env (CEOp e1 op1 e2) = ( env', (snd compiled) ++ (compile_str env e2) ++ (op_func (stack_trace env') op1) ++ "\n")
 									where 
 										compiled = (compile env e1)
 										env' = (fst compiled)
@@ -125,7 +146,7 @@ printing_code env = (store_instr type1 ) ++ " " ++ new_local_id ++ "\n"
  				  	++ (load_instr type1 ) ++ " " ++ new_local_id ++ "\n"
   				  	++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
   				  		where 
-  				  			type1 = find_track_stack env
+  				  			type1 = stack_trace env
   				  			new_local_id = show ( (length env) + 1)
 
 println_signature :: String -> String
@@ -273,9 +294,40 @@ test15 = (CCase (CEInt 0) [(CAltVal (CEInt 1) (CEInt 2)), (CAltVal (CEInt 2) (CE
 test16 = (CEOp (CEString "sth") "==" (CEString "sth"))
 
 --testing nested case statement
--- case (int 0) of (int 0) -> (case (int 1) of (int 1) -> (int 0) )
-test17 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CCase (CEInt 1) [(CAltVal (CEInt 1) (CEInt 0) )] )  )] )
+-- case (int 0) of
+--			(int 1) -> 
+--				(case (int 1) of 
+--						(int 0) -> (int 1) )
+--						(int 1) -> (int 2) ) 
+--			(int 0) -> 
+--				(case (int 1) of 
+--						(int 0) -> (int 1) )
+--						(int 1) -> (int 2) )
+test17 = (CCase (CEInt 0) [(CAltVal (CEInt 1) 
+								(CCase (CEInt 1) 
+									[(CAltVal (CEInt 0) (CEInt 1) ), 
+									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
+								)  
+						   ),
+							(CAltVal (CEInt 0) 
+								(CCase (CEInt 1) 
+									[(CAltVal (CEInt 0) (CEInt 1) ), 
+									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
+								)  
+						   )
+						  ] 
+		  )
 
+test17x = (CCase (CEInt 0) [(CAltVal (CEInt 1) (CEInt 10)
+						   ),
+							(CAltVal (CEInt 0) 
+								(CCase (CEInt 1) 
+									[(CAltVal (CEInt 0) (CEInt 1) ), 
+									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
+								)  
+						   )
+						  ] 
+		  )
 --testing simple ADT-based case statement
 test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10), (CEInt 4) ] ) ),
 					(CEInt 3)])
@@ -296,11 +348,11 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test18)
+			where compiled = (compile start_env test17x)
 
 
 --------------------------------------------------------------------------------------------------------
---helper functions
+--helper functions/wrappers
 ---------------------------------------------------------------------------------------------------------
 find id env = case lookup id env of
 		   Just e -> e
@@ -310,5 +362,8 @@ mult_dup n = (concat ( replicate n "dup\n" ) )
 
 mult_pop :: Int -> String
 mult_pop n = (concat ( replicate n "pop\n" ) )
+
+compile_str :: Env ->CExpr -> String
+compile_str env expr = snd (compile env expr)
 
 
