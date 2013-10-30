@@ -44,13 +44,13 @@ get_local_var :: String -> Env -> String
 get_local_var id1 env = show (snd (find id1 env))
 
 start_env :: Env
-start_env = [("", ("", -1) )]
+start_env = [("_depth", ("", 0)), ("_stack_trace", ("", -1) )]
 
 track_stack :: CType -> Env -> Env
-track_stack type1 env1 = (init env1) ++ [("", (type1, -1) )]
+track_stack type1 env1 = (init env1) ++ [("_stack_trace", (type1, -1) )]
 
 find_track_stack :: Env -> CType
-find_track_stack env = fst (find "" env)
+find_track_stack env = fst (find "_stack_trace" env)
 
 compile_str :: Env ->CExpr -> String
 compile_str env expr = snd (compile env expr)
