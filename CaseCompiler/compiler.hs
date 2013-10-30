@@ -111,15 +111,11 @@ compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++ (loop_
 loop_alts :: Env -> [CAlt] -> String
 loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0 "if_icmpne"
 loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) "if_icmpne" ++ (loop_alts env alts )
-
 loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CEString type1) e1 0 equals_tag_inline
 											where ids_as_exprs = map CEId ids
---loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CConst type1 ids_as_exprs) e1 0 "if_icmpne"
---											where ids_as_exprs = map CEId ids
 
 equals_tag_inline :: String
 equals_tag_inline = "invokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
---equals_tag_inline = "swap\ndup_x1\nswap\ninvokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
 
 -- env -> conditional expression -> execution expression if condition is true -> index of which alt in this case statement - > comparison_func_str
 create_alt :: Env -> CExpr -> CExpr -> Int -> String -> String
