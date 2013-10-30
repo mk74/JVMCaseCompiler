@@ -323,9 +323,17 @@ test17 = (CCase (CEInt 0) [(CAltVal (CEInt 1)
 						  ] 
 		  )
 
+--testing defining new variable as boolean (true)
+--sth:: Age = Age {Person 10} 10; sth
+test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )),
+					(CEId "sth")
+				 ]
+		 )
+
+
 --testing simple ADT-based case statement
-test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10), (CEInt 4) ] ) ),
-					(CEInt 3)])
+--test19 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10), (CEInt 4) ] ) ),
+--					(CEInt 3)])
 
 -- testing simple case statement
 -- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
@@ -343,7 +351,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test17)
+			where compiled = (compile start_env test18)
 
 
 --------------------------------------------------------------------------------------------------------
