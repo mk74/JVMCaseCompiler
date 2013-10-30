@@ -53,8 +53,8 @@ start_env = [("_depth", ("", 0)), ("_stack_trace", ("", -1) )]
 track_stack :: CType -> Env -> Env
 track_stack type1 env1 = (init env1) ++ [("_stack_trace", (type1, -1) )]
 
-stack_trace :: Env -> CType
-stack_trace env = fst (find "_stack_trace" env)
+get_stack_trace :: Env -> CType
+get_stack_trace env = fst (find "_stack_trace" env)
 
 get_depth :: Env -> Int
 get_depth env = snd (find "_depth" env)
@@ -88,7 +88,7 @@ compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_
 
 compile env (CConst id1 es) = ( (track_stack "object" env), (create_adt_inline id1 0 (length es) ) ++ (loop_add_members env es) )
 
-compile env (CEOp e1 op1 e2) = ( env', (snd compiled) ++ (compile_str env e2) ++ (op_func (stack_trace env') op1) ++ "\n")
+compile env (CEOp e1 op1 e2) = ( env', (snd compiled) ++ (compile_str env e2) ++ (op_func (get_stack_trace env') op1) ++ "\n")
 									where 
 										compiled = (compile env e1)
 										env' = (fst compiled)
@@ -143,7 +143,7 @@ printing_code env = (store_instr type1 ) ++ " " ++ new_local_id ++ "\n"
  				  	++ (load_instr type1 ) ++ " " ++ new_local_id ++ "\n"
   				  	++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
   				  		where 
-  				  			type1 = stack_trace env
+  				  			type1 = get_stack_trace env
   				  			new_local_id = show ( (length env) + 1)
 
 println_signature :: String -> String
