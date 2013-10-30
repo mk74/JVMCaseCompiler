@@ -102,8 +102,7 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
-compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++  
-							   (loop_alts env' alts) ++ (case_statement_end case_n) )
+compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++ (loop_alts env' alts) ++ (case_statement_end case_n) )
 								where 
 									case_n = get_case_n env'
 									env' = increase_case_n (fst (compile env e) )
@@ -111,31 +110,32 @@ compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++
 
 
 loop_alts :: Env -> [CAlt] -> String
-loop_alts env [(CAltVal e_cond e_exec)] = (compile_str env e_cond) ++ "if_icmpne <default_case_" ++ show case_n ++ ">\n" 
-											 ++ (compile_str env e_exec) ++ "goto <end_case_" ++ show case_n ++ ">\n"
-												where case_n = get_case_n env
-loop_alts env ((CAltVal e_cond e_exec):alts) = (compile_str env e_cond) ++ "if_icmpne " ++ alt_label ++ "\n" 
-													++ (mult_pop (length alts) ) ++ (compile_str env e_exec) 
-											     	++ "goto <end_case_" ++ show case_n ++ ">\n" ++ alt_label ++ ":\n" 
-											     	++ (loop_alts env alts )
-											  			where 
-											  				case_n = get_case_n env
-											  				alt_label = "<case_" ++ show case_n ++ "_alt_" ++ show (length alts) ++ ">"
-
-
+loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0
+loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) ++ (loop_alts env alts )
 
 loop_alts env [(CAltADT type1 ids e1)] = compile_str env e1
 
 
--- env -> conditional expression -> execution expression if condition is true -> index(from up to down)
--- create_alt :: Env -> CExpr -> Int -> 
+-- env -> conditional expression -> execution expression if condition is true -> index of which alt in this case statement
+create_alt :: Env -> CExpr -> CExpr -> Int -> String 
+create_alt env e_cond e_exec i1 = (compile_str env e_cond) ++ "if_icmpne " ++ alt_label ++ "\n"
+									++ (mult_pop i1 ) ++ (compile_str env e_exec) 
+									++ "goto <end_case_" ++ show case_n ++ ">\n" ++ alt_label ++ ":\n" 
+										where
+											case_n = get_case_n env
+											alt_label = (create_alt_label case_n i1)
+											
+-- index of which case -> index of which alt in this case statement
+create_alt_label :: Int -> Int -> String
+create_alt_label i1 0 = "<default_case_" ++ show i1 ++ ">";
+create_alt_label i1 i2 = "<case_" ++ show i1 ++ "_alt_" ++ show i2 ++ ">";
 
 -- env -> Conditional expression -> amount of alternatives
 case_statement_start :: Env -> CExpr -> [CAlt] -> String
 case_statement_start env e1 alts = snd (compile env e1) ++ (mult_dup ( (length alts) -1) ) 
 
 case_statement_end :: Int -> String
-case_statement_end case_n = "<default_case_" ++ show case_n ++ ">:\nsipush 1\n<end_case_" ++ show case_n ++ ">:\n"
+case_statement_end case_n = "sipush 1\n<end_case_" ++ show case_n ++ ">:\n"
 
 loop_add_members :: Env -> [CExpr] -> String
 loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
