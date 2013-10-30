@@ -207,7 +207,7 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
    			++ "iconst_1\niadd\nputfield Adt/index I\n"
    			++ "return\n.end method\n\n"
  -- boolean equals(String) //compares tag with given string
- 			++ ".method public equals(LAdt;)Z\n"
+ 			++ ".method public equals(Ljava/lang/String;)Z\n"
  			++ ".limit stack 10\n.limit locals 10\n"
  			++ "aload_0\ngetfield Adt/tag Ljava/lang/String;\n"
  			++ "aload_1\ninvokevirtual java/lang/String/equals(Ljava/lang/Object;)Z\n"
@@ -351,13 +351,13 @@ test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CConst "Person" [(CEInt
 
 
 --testing simple ADT-based case statement
-test19 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10)] ) ),
-				  (CCase (CEId "sth") [ 
+test19 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
 				  		(CAltADT "Age" ["age1"] (CEInt 12) ) 
 				  					  ])
 				 ]
 		 )
 
+test19x = (CConst "Age" [ (CEInt 10)] )
 --testing nested case statement
 --		(case (int 1) of 
 --				(int 0) -> (int 1) )
