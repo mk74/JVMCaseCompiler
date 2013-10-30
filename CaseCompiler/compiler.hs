@@ -88,27 +88,11 @@ loop_cases env ((CAltVal e_cond e_exec):es) i = (compile_str env e_cond) ++ "if_
 											  ++ (compile_str env e_exec) 
 											  ++ "goto <end_case>\n<case_" ++ show i ++ ">:\n" ++ (loop_cases env es (i+1) )
 
---compile env (CCase e [(CAltVal e1_cond true_e1) ] ) = ( (track_stack "int" env), (compile_str env e) ++ (compile_str env e1_cond) 
---														++ (compare_exec env true_e1) )
-	--( (track_stack "int" env), (compile_str env true_e1) )
-	--( (track_stack "int" env), (compile_str env e) ++ (compile_str env e1_cond) ++ (compare_exec env true_e1) )
-
 case_statement_case_str :: Env -> CExpr -> CExpr -> String
 case_statement_case_str env e_cond e_exec = (compile_str env e_cond) ++ "if_icmpne <next_case>\n" ++ (compile_str env e_exec) ++ "goto <end_case>\n"
 
---compare_exec :: Env -> CExpr -> String
---compare_exec env e1 = "if_icmpne <default_case>\n" ++ (compile_str env e1) ++ "goto <end_case>\n"
---					  ++"<default_case>:\nsipush 1\n<end_case>:\n"
-
 case_statement_end :: String
 case_statement_end = "<default_case>:\nsipush 1\n<end_case>:\n"
-
-
---compile env (CCase (CEString i1) [(CAlt "string" e2)] ) = compile env e2 
---compile env (CCase (CEBool i1) [(CAlt "bool" e2)] ) = compile env e2 
-	--( (track_stack "int" env), (compile_str env (CEOp e1 "==" e2) ) ++ "") 
---compile env (CCase e1 [(CAlt "int" e2)] ) = ( (track_stack "int" env), (compile_str env (CEOp e1 "==" e2) ) ++ "") 
---(CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
 
 loop_add_members :: Env -> [CExpr] -> String
 loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
