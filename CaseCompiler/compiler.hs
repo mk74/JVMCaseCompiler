@@ -40,7 +40,7 @@ load_instr _ = "aload "
 
 
 --------------------------------------------------------------------------------------------------------
---Env management functions: getting, type, keeping stack trace and depth
+--Env management functions: getting, type, keeping stack trace and case_n
 ---------------------------------------------------------------------------------------------------------
 get_type :: String -> Env -> String
 get_type id1 env = fst (find id1 env)
@@ -49,7 +49,7 @@ get_local_var :: String -> Env -> String
 get_local_var id1 env = show (snd (find id1 env))
 
 start_env :: Env
-start_env = [("_depth", ("", 0)), ("_stack_trace", ("", -1) )]
+start_env = [("_case_n", ("", 0)), ("_stack_trace", ("", -1) )]
 
 track_stack :: CType -> Env -> Env
 track_stack type1 env1 = (init env1) ++ [("_stack_trace", (type1, -1) )]
@@ -57,16 +57,16 @@ track_stack type1 env1 = (init env1) ++ [("_stack_trace", (type1, -1) )]
 get_stack_trace :: Env -> CType
 get_stack_trace env = fst (find "_stack_trace" env)
 
-get_depth :: Env -> Int
-get_depth env = snd (find "_depth" env)
+get_case_n :: Env -> Int
+get_case_n env = snd (find "_case_n" env)
 
-increase_depth :: Env -> Env
-increase_depth env = update_depth env (old_depth + 1) 
+increase_case_n :: Env -> Env
+increase_case_n env = update_case_n env (old_case_n + 1) 
 						where
-							old_depth = get_depth env
+							old_case_n = get_case_n env
 
-update_depth :: Env -> Int -> Env 
-update_depth env i1 = (init (init env)) ++ [("_depth", ("", i1) )] ++ [stack_track]
+update_case_n :: Env -> Int -> Env 
+update_case_n env i1 = (init (init env)) ++ [("_case_n", ("", i1) )] ++ [stack_track]
 						where stack_track = (last env)
 
 --------------------------------------------------------------------------------------------------------
@@ -103,24 +103,24 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
 compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++  
-							   (loop_alts env' alts) ++ (case_statement_end depth) )
+							   (loop_alts env' alts) ++ (case_statement_end case_n) )
 								where 
-									depth = get_depth env'
-									env' = increase_depth (fst (compile env e) )
+									case_n = get_case_n env'
+									env' = increase_case_n (fst (compile env e) )
 
 
 
 loop_alts :: Env -> [CAlt] -> String
-loop_alts env [(CAltVal e_cond e_exec)] = (compile_str env e_cond) ++ "if_icmpne <default_case_" ++ show depth ++ ">\n" 
-											 ++ (compile_str env e_exec) ++ "goto <end_case_" ++ show depth ++ ">\n"
-												where depth = get_depth env
+loop_alts env [(CAltVal e_cond e_exec)] = (compile_str env e_cond) ++ "if_icmpne <default_case_" ++ show case_n ++ ">\n" 
+											 ++ (compile_str env e_exec) ++ "goto <end_case_" ++ show case_n ++ ">\n"
+												where case_n = get_case_n env
 loop_alts env ((CAltVal e_cond e_exec):alts) = (compile_str env e_cond) ++ "if_icmpne " ++ alt_label ++ "\n" 
 													++ (mult_pop (length alts) ) ++ (compile_str env e_exec) 
-											     	++ "goto <end_case_" ++ show depth ++ ">\n" ++ alt_label ++ ":\n" 
+											     	++ "goto <end_case_" ++ show case_n ++ ">\n" ++ alt_label ++ ":\n" 
 											     	++ (loop_alts env alts )
 											  			where 
-											  				depth = get_depth env
-											  				alt_label = "<case_" ++ show depth ++ "_alt_" ++ show (length alts) ++ ">"
+											  				case_n = get_case_n env
+											  				alt_label = "<case_" ++ show case_n ++ "_alt_" ++ show (length alts) ++ ">"
 
 
 
@@ -135,7 +135,7 @@ case_statement_start :: Env -> CExpr -> [CAlt] -> String
 case_statement_start env e1 alts = snd (compile env e1) ++ (mult_dup ( (length alts) -1) ) 
 
 case_statement_end :: Int -> String
-case_statement_end depth = "<default_case_" ++ show depth ++ ">:\nsipush 1\n<end_case_" ++ show depth ++ ">:\n"
+case_statement_end case_n = "<default_case_" ++ show case_n ++ ">:\nsipush 1\n<end_case_" ++ show case_n ++ ">:\n"
 
 loop_add_members :: Env -> [CExpr] -> String
 loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
