@@ -117,9 +117,6 @@ loop_cases env ((CAltVal e_cond e_exec):es) i = (compile_str env e_cond) ++ "if_
 											  ++ (compile_str env e_exec) 
 											  ++ "goto <end_case>\n<case_" ++ show i ++ ">:\n" ++ (loop_cases env es (i+1) )
 
-case_statement_case_str :: Env -> CExpr -> CExpr -> String
-case_statement_case_str env e_cond e_exec = (compile_str env e_cond) ++ "if_icmpne <next_case>\n" ++ (compile_str env e_exec) ++ "goto <end_case>\n"
-
 case_statement_end :: String
 case_statement_end = "<default_case>:\nsipush 1\n<end_case>:\n"
 
