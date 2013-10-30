@@ -14,7 +14,8 @@ data CExpr = CEInt Int
 			 | CCase CExpr [CAlt]
 			 | CFakeTypedef CId CFakeConstr [CFakeConstr]
 
-data CAlt = CAlt CType CExpr 
+data CAlt = CAltVal CExpr CExpr
+			| CAltADT CType CExpr
 data CFakeConstr = CFakeConstr CId [CType]
 
 op_func :: String -> String
@@ -77,12 +78,12 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
---compile env (CCase e1 v1) = (env, "")
---compile env (CCase (CEInt i1) [(CAlt "int" e2)] ) = ([],"")--compile env e2 
-compile env (CCase (CEInt i1) [(CAlt "int" e2)] ) = compile env e2 
-compile env (CCase (CEString i1) [(CAlt "string" e2)] ) = compile env e2 
-compile env (CCase (CEBool i1) [(CAlt "bool" e2)] ) = compile env e2 
+compile env (CCase e [(CAltVal e1_cond true_e1) ] ) = (env, (compile_str env e) ++ (compile_str env e1_cond) )
 
+
+
+--compile env (CCase (CEString i1) [(CAlt "string" e2)] ) = compile env e2 
+--compile env (CCase (CEBool i1) [(CAlt "bool" e2)] ) = compile env e2 
 	--( (track_stack "int" env), (compile_str env (CEOp e1 "==" e2) ) ++ "") 
 --compile env (CCase e1 [(CAlt "int" e2)] ) = ( (track_stack "int" env), (compile_str env (CEOp e1 "==" e2) ) ++ "") 
 --(CCase (CEInt 0) [(CAlt "int" (CEInt 10) ) ] )
@@ -252,7 +253,7 @@ test13 = (CEOp (CEInt 11) "<" (CEInt 11))
 
 -- testing simple case statement
 -- case (int 0) of int-> (int 1) | string -> (int 0)
-example1 = (CCase (CEInt 0) [(CAlt "int" (CEInt 1) ) ] )
+example1 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ) ] )
 	--, (CAlt "string" (CEInt 4) ) ] )
 
 --testing simple typedef/new variable example
