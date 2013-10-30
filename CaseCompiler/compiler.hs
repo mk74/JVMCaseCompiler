@@ -78,8 +78,15 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
-compile env (CCase e [(CAltVal e1_cond true_e1) ] ) = (env, (compile_str env e) ++ (compile_str env e1_cond) )
+compile env (CCase e [(CAltVal e1_cond true_e1) ] ) = ( (track_stack "int" env), (compile_str env e) ++ (compile_str env e1_cond) 
+														++ (compare_exec env true_e1) )
+	--( (track_stack "int" env), (compile_str env true_e1) )
+	--( (track_stack "int" env), (compile_str env e) ++ (compile_str env e1_cond) ++ (compare_exec env true_e1) )
 
+
+compare_exec :: Env -> CExpr -> String
+compare_exec env e1 = "if_icmpne <default_case>\n" ++ (compile_str env e1) ++ "goto <end_case>\n"
+					  ++"<default_case>:\nsipush 1\n<end_case>:\n"
 
 
 --compile env (CCase (CEString i1) [(CAlt "string" e2)] ) = compile env e2 
