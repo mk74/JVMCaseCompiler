@@ -109,19 +109,15 @@ compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++ (loop_
 
 
 loop_alts :: Env -> [CAlt] -> String
-loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0
-loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) ++ (loop_alts env alts )
+loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0 "if_icmpne"
+loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) "if_icmpne" ++ (loop_alts env alts )
 
-loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CConst type1 ids_as_exprs) e1 0
+loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CConst type1 ids_as_exprs) e1 0 "if_icmpne"
 											where ids_as_exprs = map CEId ids
 
--- env -> conditional expression -> execution expression if condition is true -> index of which alt in this case statement
-create_alt :: Env -> CExpr -> CExpr -> Int -> String 
-create_alt env (CConst type1 ids) e_exec i1 = create_alt_cmp_func env (CConst type1 ids) e_exec i1 "if_icmpne"
-create_alt env e_cond e_exec i1 = create_alt_cmp_func env e_cond e_exec i1 "if_icmpne"
-
-create_alt_cmp_func :: Env -> CExpr -> CExpr -> Int -> String -> String
-create_alt_cmp_func env e_cond e_exec i1 cmp_func_str = (compile_str env e_cond) ++ cmp_func_str ++ " " ++ alt_label ++ "\n"
+-- env -> conditional expression -> execution expression if condition is true -> index of which alt in this case statement - > comparison_func_str
+create_alt :: Env -> CExpr -> CExpr -> Int -> String -> String
+create_alt env e_cond e_exec i1 cmp_func_str = (compile_str env e_cond) ++ cmp_func_str ++ " " ++ alt_label ++ "\n"
 														++ (mult_pop i1 ) ++ (compile_str env e_exec) 
 														++ "goto <end_case_" ++ show case_n ++ ">\n" ++ alt_label ++ ":\n" 
 															where
@@ -385,7 +381,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test20)
+			where compiled = (compile start_env test15)
 
 
 --------------------------------------------------------------------------------------------------------
