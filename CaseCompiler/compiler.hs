@@ -72,7 +72,6 @@ update_case_n env i1 = (init (init env)) ++ [("_case_n", ("", i1) )] ++ [stack_t
 --------------------------------------------------------------------------------------------------------
 --Main compile function
 ---------------------------------------------------------------------------------------------------------
-
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = ( (track_stack "int" env), "sipush " ++ show i1 ++ "\n")
 compile env (CEBool True) = ( (track_stack "boolean" env), "iconst_1\n" ++ boolean_value)
@@ -124,7 +123,7 @@ create_alt env e_cond e_exec i1 = (compile_str env e_cond) ++ "if_icmpne " ++ al
 										where
 											case_n = get_case_n env
 											alt_label = (create_alt_label case_n i1)
-											
+
 -- index of which case -> index of which alt in this case statement
 create_alt_label :: Int -> Int -> String
 create_alt_label i1 0 = "<default_case_" ++ show i1 ++ ">";
@@ -239,7 +238,6 @@ jasminWrapper prog_code = preamble_main ++ static_main_start ++ prog_code ++ sta
 --------------------------------------------------------------------------------------------------------
 -- Unit tests
 --------------------------------------------------------------------------------------------------------
-
 test0 = (CEInt 5)
 
 --testing addition two numbers
