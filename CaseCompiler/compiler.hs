@@ -55,6 +55,7 @@ find_track_stack env = fst (find "" env)
 compile_str :: Env ->CExpr -> String
 compile_str env expr = snd (compile env expr)
 
+
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = ( (track_stack "int" env), "sipush " ++ show i1 ++ "\n")
 compile env (CEBool True) = ( (track_stack "boolean" env), "iconst_1\n" ++ boolean_value)
@@ -84,10 +85,10 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
-
---TODO: keeping track what's really on the stack: static field, if yes or not
 compile env (CCase e cavs) = ( (fst compiled), (snd compiled) ++ (mult_dup ( (length cavs) -1) ) ++  (loop_cases env cavs 0) ++ case_statement_end )
 								where compiled = (compile env e)
+
+
 
 loop_cases :: Env -> [CAlt] -> Int -> String
 loop_cases env [(CAltVal e_cond e_exec)] i = (compile_str env e_cond) ++ "if_icmpne <default_case>\n" ++ (compile_str env e_exec) ++ "goto <end_case>\n"
@@ -266,14 +267,9 @@ test15 = (CCase (CEInt 0) [(CAltVal (CEInt 1) (CEInt 2)), (CAltVal (CEInt 2) (CE
 						   (CAltVal (CEInt 3) (CEInt 4)), (CAltVal (CEInt 4) (CEInt 5)), 
 						   (CAltVal (CEInt 0) (CEInt 1)) ] )
 
---testing case statement with strings
---test16 = (CCase (CEString "something") [(CAltVal (CEString "Sth") (CEString "It's Sth")), 
---										(CAltVal (CEString "Some") (CEString "It's Some")), 
---										(CAltVal (CEString "Something") (CEString "It's Something!"))]) 
-
 --testing comparing two strings
 -- "sth"=="sth"
-test17 = (CEOp (CEString "sth") "==" (CEString "sth"))
+test16 = (CEOp (CEString "sth") "==" (CEString "sth"))
 
 -- testing simple case statement
 -- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
@@ -291,7 +287,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test17)
+			where compiled = (compile start_env test15)
 
 
 --------------------------------------------------------------------------------------------------------
