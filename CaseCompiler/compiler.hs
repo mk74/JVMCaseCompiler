@@ -20,6 +20,9 @@ data CAlt = CAltVal CExpr CExpr
 
 data CFakeConstr = CFakeConstr CId [CType]
 
+--------------------------------------------------------------------------------------------------------
+--Simple arithmetic operations + loading/storing(integers/objects)
+---------------------------------------------------------------------------------------------------------
 op_func :: CType -> String -> String
 op_func type1 "+" = "iadd"
 op_func type1 "-" = "isub"
@@ -161,9 +164,6 @@ create_adt_inline tag value n = "ldc \"" ++ tag ++ "\"\n"
 						  		++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
 						  		++ (mult_dup n)
 
-add_member_inline :: String
-add_member_inline = "invokevirtual Adt/add(LAdt;)V\n"
-
 
 printing_code :: Env -> String
 printing_code env = (store_instr type1 ) ++ " " ++ new_local_id ++ "\n"
@@ -178,6 +178,12 @@ println_signature :: String -> String
 println_signature "int" = "I"
 println_signature _ = "Ljava/lang/Object;"
 
+
+--------------------------------------------------------------------------------------------------------
+-- Inline JVM code
+--------------------------------------------------------------------------------------------------------
+add_member_inline :: String
+add_member_inline = "invokevirtual Adt/add(LAdt;)V\n"
 
 boolean_value ::String
 boolean_value = "invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;\n"
@@ -431,7 +437,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 					(CENewVar "t" "Time" ( CConst "Min" [(CEInt 2)] ) ), 
 					(CEId "t")])
 
--- example 3(slightly modified, no Strings)
+-- example 3(slightly modified - no Strings)
 -- testing ADT-based data structures
 -- type Age = Age int; type Address = Addr int int; type Person = Person Age Address
 -- kevin :: Person = Person 21 { Addr 1 10 }
