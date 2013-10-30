@@ -112,13 +112,13 @@ compile env (CHelpNext) = (env, "invokevirtual Adt/next()I\n")
 
 
 loop_alts :: Env -> [CAlt] -> String
-loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0 "if_icmpne"
-loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) "if_icmpne" ++ (loop_alts env alts )
-loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CEString type1) new_e1 0 equals_tag_inline
+loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0 "if_icmpne" 0
+loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) "if_icmpne" 0 ++ (loop_alts env alts )
+loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CEString type1) new_e1 0 equals_tag_inline 1
 											where 
 												ids_as_exprs = map CEId ids
 												new_e1 = (CExprs [ (CENewVar (head ids) "int" (CHelpNext) ), e1])
-loop_alts env ((CAltADT type1 ids e1):alts) = create_alt env (CEString type1) new_e1 (length alts) equals_tag_inline ++ (loop_alts env alts)
+loop_alts env ((CAltADT type1 ids e1):alts) = create_alt env (CEString type1) new_e1 (length alts) equals_tag_inline 1 ++ (loop_alts env alts)
 											where 
 												ids_as_exprs = map CEId ids
 												new_e1 = (CExprs [ (CENewVar (head ids) "int" (CHelpNext) ), e1])
@@ -127,10 +127,11 @@ equals_tag_inline :: String --we need swap/dup_x1 combination since we want to d
 equals_tag_inline = "swap\ndup_x1\nswap\ninvokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
 
 -- env -> conditional expression -> execution expression if condition is true -> index of which alt in this case statement - > comparison_func_str
-create_alt :: Env -> CExpr -> CExpr -> Int -> String -> String
-create_alt env e_cond e_exec i1 cmp_func_str = (compile_str env e_cond) ++ cmp_func_str ++ " " ++ alt_label ++ "\n"
+create_alt :: Env -> CExpr -> CExpr -> Int -> String -> Int -> String 
+create_alt env e_cond e_exec i1 cmp_func_str x1 = (compile_str env e_cond) ++ cmp_func_str ++ " " ++ alt_label ++ "\n"
 														++ (mult_pop i1 ) ++ (compile_str env e_exec) 
 														++ "goto <end_case_" ++ show case_n ++ ">\n" ++ alt_label ++ ":\n" 
+														++ (mult_pop x1 )
 															where
 																case_n = get_case_n env
 																alt_label = (create_alt_label case_n i1)
@@ -430,7 +431,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test21)
+			where compiled = (compile start_env test18)
 
 
 --------------------------------------------------------------------------------------------------------
