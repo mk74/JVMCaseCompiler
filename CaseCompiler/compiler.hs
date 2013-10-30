@@ -105,7 +105,8 @@ case_statement_end = "<default_case>:\nsipush 1\n<end_case>:\n"
 loop_add_members :: Env -> [CExpr] -> String
 loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
 loop_add_members env [e1] = (compile_str env e1) ++ (add_member_inline)
-loop_add_members env (e1:es) = (compile_str env e1) ++ (add_member_inline) ++ (loop_add_members env es)
+loop_add_members env ((CEInt i1):es) = (create_adt_inline "int" i1 0) ++ add_member_inline ++ (loop_add_members env es)
+loop_add_members env (e1:es) = (compile_str env e1) ++ add_member_inline ++ (loop_add_members env es)
 
 create_adt_inline :: String -> Int -> Int -> String
 create_adt_inline tag value n = "ldc \"" ++ tag ++ "\"\n"
@@ -271,6 +272,14 @@ test15 = (CCase (CEInt 0) [(CAltVal (CEInt 1) (CEInt 2)), (CAltVal (CEInt 2) (CE
 -- "sth"=="sth"
 test16 = (CEOp (CEString "sth") "==" (CEString "sth"))
 
+--testing nested case statement
+-- case (int 0) of (int 0) -> (case (int 1) of (int 1) -> (int 0) )
+test17 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CCase (CEInt 1) [(CAltVal (CEInt 1) (CEInt 0) )] )  )] )
+
+--testing simple ADT-based case statement
+test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10), (CEInt 4) ] ) ),
+					(CEInt 3)])
+
 -- testing simple case statement
 -- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
 example1 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ), (CAltVal (CEInt 1) (CEInt 0) ) ] )
@@ -287,7 +296,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test15)
+			where compiled = (compile start_env test18)
 
 
 --------------------------------------------------------------------------------------------------------
