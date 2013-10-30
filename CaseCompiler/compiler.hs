@@ -104,7 +104,7 @@ compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++ (loop_alts env' alts) ++ (case_statement_end case_n) )
 								where 
 									case_n = get_case_n env'
-									env' = increase_case_n (fst (compile env e) )
+									env' = (track_stack "int" (increase_case_n (fst (compile env e) )) )
 
 
 
@@ -112,8 +112,14 @@ loop_alts :: Env -> [CAlt] -> String
 loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0 "if_icmpne"
 loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) "if_icmpne" ++ (loop_alts env alts )
 
-loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CConst type1 ids_as_exprs) e1 0 "if_icmpne"
+loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CEString type1) e1 0 equals_tag_inline
 											where ids_as_exprs = map CEId ids
+--loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CConst type1 ids_as_exprs) e1 0 "if_icmpne"
+--											where ids_as_exprs = map CEId ids
+
+equals_tag_inline :: String
+equals_tag_inline = "invokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
+--equals_tag_inline = "swap\ndup_x1\nswap\ninvokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
 
 -- env -> conditional expression -> execution expression if condition is true -> index of which alt in this case statement - > comparison_func_str
 create_alt :: Env -> CExpr -> CExpr -> Int -> String -> String
@@ -200,6 +206,12 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
    			++ "getfield Adt/index I\n"
    			++ "iconst_1\niadd\nputfield Adt/index I\n"
    			++ "return\n.end method\n\n"
+ -- boolean equals(String) //compares tag with given string
+ 			++ ".method public equals(LAdt;)Z\n"
+ 			++ ".limit stack 10\n.limit locals 10\n"
+ 			++ "aload_0\ngetfield Adt/tag Ljava/lang/String;\n"
+ 			++ "aload_1\ninvokevirtual java/lang/String/equals(Ljava/lang/Object;)Z\n"
+ 			++ "ireturn\n.end method\n\n"
 
 preamble_main :: String
 preamble_main = ".class public Program\n.super java/lang/Object\n\n"
@@ -381,7 +393,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test15)
+			where compiled = (compile start_env test19)
 
 
 --------------------------------------------------------------------------------------------------------
@@ -389,6 +401,7 @@ main = do
 ---------------------------------------------------------------------------------------------------------
 find id env = case lookup id env of
 		   Just e -> e
+		   Nothing -> error "Something is wrong"
 
 mult_dup :: Int -> String
 mult_dup n = (concat ( replicate n "dup\n" ) )
