@@ -65,11 +65,6 @@ increase_depth env = update_depth env (old_depth + 1)
 						where
 							old_depth = get_depth env
 
-decrease_depth :: Env -> Env
-decrease_depth env = update_depth env (old_depth - 1) 
-						where
-							old_depth = get_depth env
-
 update_depth :: Env -> Int -> Env 
 update_depth env i1 = (init (init env)) ++ [("_depth", ("", i1) )] ++ [stack_track]
 						where stack_track = (last env)
@@ -107,30 +102,33 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
-compile env (CCase e alts) = ( (fst compiled), (case_statement_start env e alts) ++  
-							   (loop_alts env' alts 0) ++ (case_statement_end depth) )
+compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++  
+							   (loop_alts env' alts) ++ (case_statement_end depth) )
 								where 
-									compiled = (compile env e)
 									depth = get_depth env'
-									env' = increase_depth (fst compiled)
+									env' = increase_depth (fst (compile env e) )
 
 
 
-loop_alts :: Env -> [CAlt] -> Int -> String
-loop_alts env [(CAltVal e_cond e_exec)] i = (compile_str env e_cond) ++ "if_icmpne <default_case_" ++ show depth ++ ">\n" 
+loop_alts :: Env -> [CAlt] -> String
+loop_alts env [(CAltVal e_cond e_exec)] = (compile_str env e_cond) ++ "if_icmpne <default_case_" ++ show depth ++ ">\n" 
 											 ++ (compile_str env e_exec) ++ "goto <end_case_" ++ show depth ++ ">\n"
 												where depth = get_depth env
-loop_alts env ((CAltVal e_cond e_exec):alts) i = (compile_str env e_cond) ++ "if_icmpne " ++ alt_label ++ "\n" 
+loop_alts env ((CAltVal e_cond e_exec):alts) = (compile_str env e_cond) ++ "if_icmpne " ++ alt_label ++ "\n" 
 													++ (mult_pop (length alts) ) ++ (compile_str env e_exec) 
 											     	++ "goto <end_case_" ++ show depth ++ ">\n" ++ alt_label ++ ":\n" 
-											     	++ (loop_alts env alts (i+1) )
+											     	++ (loop_alts env alts )
 											  			where 
 											  				depth = get_depth env
-											  				alt_label = "<case_" ++ show depth ++ "_alt_" ++ show i ++ ">"
+											  				alt_label = "<case_" ++ show depth ++ "_alt_" ++ show (length alts) ++ ">"
 
 
 
-loop_alts env [(CAltADT type1 ids e1)] i = compile_str env e1
+loop_alts env [(CAltADT type1 ids e1)] = compile_str env e1
+
+
+-- env -> conditional expression -> execution expression if condition is true -> index(from up to down)
+-- create_alt :: Env -> CExpr -> Int -> 
 
 -- env -> Conditional expression -> amount of alternatives
 case_statement_start :: Env -> CExpr -> [CAlt] -> String
@@ -350,6 +348,19 @@ test19 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10)] ) ),
 				 ]
 		 )
 
+
+test20 = (CExprs [
+								(CCase (CEInt 1) 
+									[(CAltVal (CEInt 0) (CEInt 1) ), 
+									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
+								),
+								(CCase (CEInt 3) 
+									[(CAltVal (CEInt 1) (CEInt 2) ), 
+									 (CAltVal (CEInt 3) (CEInt 4) ) ] 
+								)  
+				 ] 
+		  )
+
 -- testing simple case statement
 -- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
 example1 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ), (CAltVal (CEInt 1) (CEInt 0) ) ] )
@@ -366,7 +377,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test17)
+			where compiled = (compile start_env test20)
 
 
 --------------------------------------------------------------------------------------------------------
