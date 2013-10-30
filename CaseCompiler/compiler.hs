@@ -114,8 +114,8 @@ loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (len
 loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CEString type1) e1 0 equals_tag_inline
 											where ids_as_exprs = map CEId ids
 
-equals_tag_inline :: String
-equals_tag_inline = "invokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
+equals_tag_inline :: String --we need swap/dup_x1 combination since we want to declare local variable if succesful
+equals_tag_inline = "swap\ndup_x1\nswap\ninvokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
 
 -- env -> conditional expression -> execution expression if condition is true -> index of which alt in this case statement - > comparison_func_str
 create_alt :: Env -> CExpr -> CExpr -> Int -> String -> String
@@ -198,9 +198,13 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
    			++ ".limit stack 10\n.limit locals 10\n"
    			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
    			++ "aload_0\ngetfield Adt/index I\n"
-   			++ "aload_1\naastore\naload_0\ndup\n"
+   			++ "aload_1\naastore\naload_0\ndup\n"   			
    			++ "getfield Adt/index I\n"
    			++ "iconst_1\niadd\nputfield Adt/index I\n"
+   			++ "aload_0\ngetfield Adt/index I\naload_0\n"
+   			++ "getfield Adt/arr [LAdt;\narraylength\n"
+   			++ "if_icmpne <no_rewarding>\naload_0\niconst_0\nputfield Adt/index I\n"
+   			++ "<no_rewarding>:\n"
    			++ "return\n.end method\n\n"
  -- boolean equals(String) //compares tag with given string
  			++ ".method public equals(Ljava/lang/String;)Z\n"
@@ -208,6 +212,21 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
  			++ "aload_0\ngetfield Adt/tag Ljava/lang/String;\n"
  			++ "aload_1\ninvokevirtual java/lang/String/equals(Ljava/lang/Object;)Z\n"
  			++ "ireturn\n.end method\n\n"
+ -- Adt next() //gets next child of this node
+ 			++ ".method public next()LAdt;\n"
+ 			++ ".limit stack 10\n.limit locals 10\n"
+ 			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
+ 			++ "aload_0\ngetfield Adt/index I\n"
+ 			++ "aaload\nastore_1\naload_0\ndup\n"
+ 			++ "getfield Adt/index I\n"
+ 			++ "iconst_1\niadd\nputfield Adt/index I\n"
+ 			++ "aload_0\ngetfield Adt/index I\n"
+ 			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
+ 			++ "arraylength\nif_icmpne <no_rewarding_next>\n"
+ 			++ "aload_0\niconst_0\nputfield Adt/index I\n"
+ 			++ "<no_rewarding_next>:\naload_0\ngetfield Adt/arr [LAdt;\n"
+ 			++ "aload_0\ngetfield Adt/index I\n"
+ 			++ "aaload\nareturn\n.end method\n\n"
 
 preamble_main :: String
 preamble_main = ".class public Program\n.super java/lang/Object\n\n"
