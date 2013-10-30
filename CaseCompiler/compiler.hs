@@ -79,8 +79,9 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
 
---TODO: other types than int?
-compile env (CCase e cavs) = ( (track_stack "int" env), (compile_str env e) ++ (mult_dup ( (length cavs) -1) ) ++  (loop_cases env cavs 0) ++ case_statement_end )
+--TODO: keeping track what's really on the stack: static field, if yes or not
+compile env (CCase e cavs) = ( (fst compiled), (snd compiled) ++ (mult_dup ( (length cavs) -1) ) ++  (loop_cases env cavs 0) ++ case_statement_end )
+								where compiled = (compile env e)
 
 loop_cases :: Env -> [CAlt] -> Int -> String
 loop_cases env [(CAltVal e_cond e_exec)] i = (compile_str env e_cond) ++ "if_icmpne <default_case>\n" ++ (compile_str env e_exec) ++ "goto <end_case>\n"
@@ -210,16 +211,13 @@ test1 = (CEOp (CEInt 10) "+" (CEInt 15))
 --testing AND operator
 test2 = (CEOp (CEInt 2) "and" (CEInt 1))
 
-
 --testing nested arithmetic operations
 -- (10 * 5) - (4/2)
 test3 = (CEOp (CEOp (CEInt 10) "*" (CEInt 5)) "-" (CEOp (CEInt 4) "/" (CEInt 2)))
 
-
 --testing defining new variable and using it
 -- sth ::  int = 10 * 5; sth
 test4 =  (CExprs [(CENewVar "sth" "int" (CEOp (CEInt 10) "*" (CEInt 5))), (CEId "sth")])
-
 
 --testing defining new variable and using it
 -- sth :: int = 10; sth2 :: int = sth * 2; sth2
@@ -266,6 +264,11 @@ test14 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ) ] )
 test15 = (CCase (CEInt 0) [(CAltVal (CEInt 1) (CEInt 2)), (CAltVal (CEInt 2) (CEInt 3)), 
 						   (CAltVal (CEInt 3) (CEInt 4)), (CAltVal (CEInt 4) (CEInt 5)), 
 						   (CAltVal (CEInt 0) (CEInt 1)) ] )
+
+--testing case statement with strings
+--test16 = (CCase (CEString "something") [(CAltVal (CEString "Sth") (CEString "It's Sth")), 
+--										(CAltVal (CEString "Some") (CEString "It's Some")), 
+--										(CAltVal (CEString "Something") (CEString "It's Something!"))]) 
 
 -- testing simple case statement
 -- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
