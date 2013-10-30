@@ -24,7 +24,7 @@ op_func :: CType -> String -> String
 op_func type1 "+" = "iadd"
 op_func type1 "-" = "isub"
 op_func type1 "*" = "imul"
-op_func type1 "/" = "idiv"
+op_func type1 "div" = "idiv"
 op_func "int" "==" = "invokestatic Program/compare_ints(II)I\n"
 op_func "string" "==" = "invokestatic Program/compare_strs(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Boolean;\n"
 op_func type1 "<" = "invokestatic Program/less_int_than(II)I\n"
@@ -376,26 +376,27 @@ test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CConst "Person" [(CEInt
 
 
 --testing simple ADT-based case statement
+-- case (Age 10) of (Age x) -> x
 test19 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
-				  		(CAltADT "Age" ["age1"] (CEId "age1") ) 
+				  		(CAltADT "Age" ["x"] (CEId "x") ) 
 				  					  ])
 				 ]
 		 )
 
-
---testing simple ADT-based case statement
+--testing simple ADT-based case sttement with many alternatives
+-- case (Age 10) of (Something x) -> x
+--					(Sth x) -> x
+--					(Person x) -> x
+--					(Age x) -> x
 test20 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
-				  		(CAltADT "Age" ["age1"] (CEId "age1") )
+						(CAltADT "Something" ["x"] (CEInt 5) ),
+						(CAltADT "Sth" ["x"] (CEInt 15) ),
+						(CAltADT "Person" ["x"] (CEInt 25) ),
+				  		(CAltADT "Age" ["x"] (CEId "x") )
 				  ])
 				 ]
 		 )
 
-test21 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
-						(CAltADT "Person" ["age1"] (CEId "age1") ),
-				  		(CAltADT "Age" ["age1"] (CEId "age1") )
-				  ])
-				 ]
-		 )
 --testing nested case statement
 --		(case (int 1) of 
 --				(int 0) -> (int 1) )
@@ -403,7 +404,7 @@ test21 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [
 --		(case (int 3) of 
 --				(int 1) -> (int 2) )
 --				(int 4) -> (int 4) )
-test22 = (CExprs [
+test21 = (CExprs [
 								(CCase (CEInt 1) 
 									[(CAltVal (CEInt 0) (CEInt 1) ), 
 									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
@@ -415,15 +416,57 @@ test22 = (CExprs [
 				 ] 
 		  )
 
+--------------------------------------------------------------------------------------------------------
+--Examples from specification
+--------------------------------------------------------------------------------------------------------
+-- example 1
 -- testing simple case statement
 -- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
 example1 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ), (CAltVal (CEInt 1) (CEInt 0) ) ] )
 
---testing simple typedef/new variable example
--- type Time = Hour int | Min int; t :: Time = Min 2; t }
+-- example 2
+-- testing simple typedef/new variable example
+-- type Time = Hour int | Min int; t :: Time = Min 2; t 
 example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeConstr "min" ["int"] ) ]), 
 					(CENewVar "t" "Time" ( CConst "Min" [(CEInt 2)] ) ), 
 					(CEId "t")])
+
+-- example 3(slightly modified, no Strings)
+-- testing ADT-based data structures
+-- type Age = Age int; type Address = Addr int int; type Person = Person Age Address
+-- kevin :: Person = Person 21 { Addr 1 10 }
+-- vicki :: Person = Person 21 { Addr 1 10 }
+-- ages :: int = case kevin of
+--					Person agek addr -> case vicki of
+--											Person agev addr -> agek + agev
+-- ages div 2
+example3 = (CExprs [
+					(CFakeTypedef "Age" (CFakeConstr "Age" ["int"]) []),
+					(CFakeTypedef "Address" (CFakeConstr "Addr" ["int", "int"]) [] ),
+					(CFakeTypedef "Person" (CFakeConstr "Person" ["Age", "Address"] ) [] ),
+					(CENewVar "kevin" "Person" 
+						(CConst "Person" [(CEInt 21), 
+							(CConst "Addr" [(CEInt 1), (CEInt 10)]) 
+						]) 
+					),
+					(CENewVar "vicki" "Person" 
+						(CConst "Person" [(CEInt 21), 
+							(CConst "Addr" [(CEInt 1), (CEInt 10)]) 
+						]) 
+					),
+
+					(CENewVar "ages" "int"
+						(CCase (CEId "kevin") 
+							[(CAltADT "Person" ["agek", "addr"] 
+								(CCase (CEId "vicki") 
+									[(CAltADT "Person" ["agev", "addr"] (CEOp (CEId "agek") "+" (CEId "agev")))]
+								)
+							)]
+						)  
+					),
+					(CEOp (CEId "ages") "div" (CEInt 2) )
+				   ]
+			)
 
 --------------------------------------------------------------------------------------------------------
 --program's main functions
@@ -431,7 +474,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test18)
+			where compiled = (compile start_env example3)
 
 
 --------------------------------------------------------------------------------------------------------
