@@ -348,7 +348,13 @@ test19 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10)] ) ),
 				 ]
 		 )
 
-
+--testing nested case statement
+--		(case (int 1) of 
+--				(int 0) -> (int 1) )
+--				(int 1) -> (int 2) ) 
+--		(case (int 3) of 
+--				(int 1) -> (int 2) )
+--				(int 4) -> (int 4) )
 test20 = (CExprs [
 								(CCase (CEInt 1) 
 									[(CAltVal (CEInt 0) (CEInt 1) ), 
