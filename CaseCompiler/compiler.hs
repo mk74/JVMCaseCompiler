@@ -1,3 +1,6 @@
+--------------------------------------------------------------------------------------------------------
+--Data structures
+---------------------------------------------------------------------------------------------------------
 type COp = String
 type CType = String
 type CId = String
@@ -113,7 +116,7 @@ compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++ (loop_
 compile env (CHelpNext) = (env, "invokevirtual Adt/next()I\n")
 
 
-
+--loop creating alternatives for CASE statemnt 
 loop_alts :: Env -> [CAlt] -> String
 loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0 "if_icmpne" 0
 loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) "if_icmpne" 0 ++ (loop_alts env alts )
@@ -129,6 +132,7 @@ loop_alts env ((CAltADT type1 ids e1):alts) = create_alt env (CEString type1) ne
 equals_tag_inline :: String --we need swap/dup_x1 combination since we want to declare local variable if succesful
 equals_tag_inline = "swap\ndup_x1\nswap\ninvokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
 
+--creates single alternative for CASE statemnt
 -- env -> conditional expression -> execution expression if condition is true -> index of which alt in this case statement - > comparison_func_str
 create_alt :: Env -> CExpr -> CExpr -> Int -> String -> Int -> String 
 create_alt env e_cond e_exec i1 cmp_func_str x1 = (compile_str env e_cond) ++ cmp_func_str ++ " " ++ alt_label ++ "\n"
@@ -138,6 +142,7 @@ create_alt env e_cond e_exec i1 cmp_func_str x1 = (compile_str env e_cond) ++ cm
 															where
 																case_n = get_case_n env
 																alt_label = (create_alt_label case_n i1)
+
 
 -- index of which case -> index of which alt in this case statement
 create_alt_label :: Int -> Int -> String
@@ -151,6 +156,7 @@ case_statement_start env e1 alts = snd (compile env e1) ++ (mult_dup ( (length a
 case_statement_end :: Int -> String
 case_statement_end case_n = "sipush 1\n<end_case_" ++ show case_n ++ ">:\n"
 
+-- loop adding memebrs(nodes of tree) in our abstract data type jvm's object - Adt
 loop_add_members :: Env -> [CExpr] -> String
 loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
 loop_add_members env [e1] = (compile_str env e1) ++ (add_member_inline)
@@ -159,20 +165,20 @@ loop_add_members env (e1:es) = (compile_str env e1) ++ add_member_inline ++ (loo
 
 create_adt_inline :: String -> Int -> Int -> String
 create_adt_inline tag value n = "ldc \"" ++ tag ++ "\"\n"
-						  		++ "sipush " ++ show value ++ "\n"
-						  		++ "sipush " ++ show n ++ "\n"
-						  		++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
-						  		++ (mult_dup n)
+								++ "sipush " ++ show value ++ "\n"
+								++ "sipush " ++ show n ++ "\n"
+								++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
+								++ (mult_dup n)
 
 
 printing_code :: Env -> String
 printing_code env = (store_instr type1 ) ++ " " ++ new_local_id ++ "\n"
-				  	++"getstatic java/lang/System/out Ljava/io/PrintStream;\n"
- 				  	++ (load_instr type1 ) ++ " " ++ new_local_id ++ "\n"
-  				  	++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
-  				  		where 
-  				  			type1 = get_stack_trace env
-  				  			new_local_id = show ( (length env))
+					++"getstatic java/lang/System/out Ljava/io/PrintStream;\n"
+ 					++ (load_instr type1 ) ++ " " ++ new_local_id ++ "\n"
+  					++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
+  						where 
+  							type1 = get_stack_trace env
+  							new_local_id = show ( (length env))
 
 println_signature :: String -> String
 println_signature "int" = "I"
@@ -185,70 +191,73 @@ println_signature _ = "Ljava/lang/Object;"
 add_member_inline :: String
 add_member_inline = "invokevirtual Adt/add(LAdt;)V\n"
 
+--boxing boolean value into Boolean object
 boolean_value ::String
 boolean_value = "invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;\n"
 
+-- public class Adt
 adt_class :: String
 adt_class = ".class public Adt\n.super java/lang/Object\n\n"
 			++ ".field public tag Ljava/lang/String;\n"
 			++ ".field public value I\n.field public arr [LAdt;\n"
 			++ ".field private index I = 0\n.method public <init>()V\n"
 			++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
-  			++ "return\n.end method\n\n"
+			++ "return\n.end method\n\n"
  -- String toString()
-  			++ ".method public toString()Ljava/lang/String;\n"
+			++ ".method public toString()Ljava/lang/String;\n"
 			++ "aload_0\ngetfield Adt/tag Ljava/lang/String;\n"
-  			++ "areturn\n.end method\n\n"
+			++ "areturn\n.end method\n\n"
  -- Adt create(String, int, int)
-   			++ ".method public static create(Ljava/lang/String;II)LAdt;\n"
-   			++ ".limit stack 10\n.limit locals 10\n"
+			++ ".method public static create(Ljava/lang/String;II)LAdt;\n"
+			++ ".limit stack 10\n.limit locals 10\n"
 			++ "new Adt\ndup\ninvokespecial Adt/<init>()V\n"
-		  	++ "astore_3\naload_3\naload_0\n"
+			++ "astore_3\naload_3\naload_0\n"
 			++ "putfield Adt/tag Ljava/lang/String;\n"
-		  	++ "aload_3\niload_1\nputfield Adt/value I\n"
-		  	++ "aload_3\niload 2\nanewarray Adt\n"
-		  	++ "putfield Adt/arr [LAdt;\naload_3\n"
+			++ "aload_3\niload_1\nputfield Adt/value I\n"
+			++ "aload_3\niload 2\nanewarray Adt\n"
+			++ "putfield Adt/arr [LAdt;\naload_3\n"
   			++ "areturn\n.end method\n\n"
  -- void add(Adt)
 			++ ".method public add(LAdt;)V\n"
-   			++ ".limit stack 10\n.limit locals 10\n"
-   			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
-   			++ "aload_0\ngetfield Adt/index I\n"
-   			++ "aload_1\naastore\naload_0\ndup\n"   			
-   			++ "getfield Adt/index I\n"
-   			++ "iconst_1\niadd\nputfield Adt/index I\n"
-   			++ "aload_0\ngetfield Adt/index I\naload_0\n"
-   			++ "getfield Adt/arr [LAdt;\narraylength\n"
-   			++ "if_icmpne <no_rewarding>\naload_0\niconst_0\nputfield Adt/index I\n"
-   			++ "<no_rewarding>:\n"
-   			++ "return\n.end method\n\n"
+			++ ".limit stack 10\n.limit locals 10\n"
+			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
+			++ "aload_0\ngetfield Adt/index I\n"
+			++ "aload_1\naastore\naload_0\ndup\n"   			
+			++ "getfield Adt/index I\n"
+			++ "iconst_1\niadd\nputfield Adt/index I\n"
+			++ "aload_0\ngetfield Adt/index I\naload_0\n"
+			++ "getfield Adt/arr [LAdt;\narraylength\n"
+			++ "if_icmpne <no_rewarding>\naload_0\niconst_0\nputfield Adt/index I\n"
+			++ "<no_rewarding>:\n"
+			++ "return\n.end method\n\n"
  -- boolean equals(String) //compares tag with given string
- 			++ ".method public equals(Ljava/lang/String;)Z\n"
- 			++ ".limit stack 10\n.limit locals 10\n"
- 			++ "aload_0\ngetfield Adt/tag Ljava/lang/String;\n"
- 			++ "aload_1\ninvokevirtual java/lang/String/equals(Ljava/lang/Object;)Z\n"
- 			++ "ireturn\n.end method\n\n"
+			++ ".method public equals(Ljava/lang/String;)Z\n"
+			++ ".limit stack 10\n.limit locals 10\n"
+			++ "aload_0\ngetfield Adt/tag Ljava/lang/String;\n"
+			++ "aload_1\ninvokevirtual java/lang/String/equals(Ljava/lang/Object;)Z\n"
+			++ "ireturn\n.end method\n\n"
  -- Adt next() //gets the value of node's next child
- 			++ ".method public next()I\n"
- 			++ ".limit stack 10\n.limit locals 10\n"
- 			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
- 			++ "aload_0\ngetfield Adt/index I\n"
- 			++ "aaload\ngetfield Adt/value I\nistore_1\n"
- 			++ "aload_0\ndup\n"
- 			++ "getfield Adt/index I\n"
- 			++ "iconst_1\niadd\nputfield Adt/index I\n"
- 			++ "aload_0\ngetfield Adt/index I\n"
- 			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
- 			++ "arraylength\nif_icmpne <no_rewarding_next>\n"
- 			++ "aload_0\niconst_0\nputfield Adt/index I\n"
- 			++ "<no_rewarding_next>:\niload_1\n"
+			++ ".method public next()I\n"
+			++ ".limit stack 10\n.limit locals 10\n"
+			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
+			++ "aload_0\ngetfield Adt/index I\n"
+			++ "aaload\ngetfield Adt/value I\nistore_1\n"
+			++ "aload_0\ndup\n"
+			++ "getfield Adt/index I\n"
+			++ "iconst_1\niadd\nputfield Adt/index I\n"
+			++ "aload_0\ngetfield Adt/index I\n"
+			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
+			++ "arraylength\nif_icmpne <no_rewarding_next>\n"
+			++ "aload_0\niconst_0\nputfield Adt/index I\n"
+			++ "<no_rewarding_next>:\niload_1\n"
 			++ "ireturn\n.end method\n\n"
 
+--defining main class of pogram
 preamble_main :: String
 preamble_main = ".class public Program\n.super java/lang/Object\n\n"
 				++ ".method public <init>()V\n"
 				++ "aload_0\ninvokenonvirtual java/lang/Object/<init>()V\n"
-  				++ "return\n.end method\n\n"
+				++ "return\n.end method\n\n"
 
 static_main_start :: String
 static_main_start = 
@@ -270,7 +279,7 @@ static_main_start =
 					++ "ireturn\n.end method\n\n\n"
 -- public static main(String[] args)
 					++ ".method public static main([Ljava/lang/String;)V\n"
-  					++ ".limit stack 100\n.limit locals 100\n"
+					++ ".limit stack 100\n.limit locals 100\n"
 
 static_main_end :: String
 static_main_end = "return\n.end method\n"
@@ -281,6 +290,8 @@ jasminWrapper prog_code = preamble_main ++ static_main_start ++ prog_code ++ sta
 --------------------------------------------------------------------------------------------------------
 -- Unit tests
 --------------------------------------------------------------------------------------------------------
+--testing printing one contant
+-- 5
 test0 = (CEInt 5)
 
 --testing addition two numbers
@@ -341,8 +352,8 @@ test14 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ) ] )
 --testing case statement with many possibilities
 --  case (int 0) of (int 1) -> (int 2) | (int 2)-> (int 3) | (int 3)-> (int 4) | (int 4) -> (int 5) | (int 0) -> (int 1)
 test15 = (CCase (CEInt 0) [(CAltVal (CEInt 1) (CEInt 2)), (CAltVal (CEInt 2) (CEInt 3)), 
-						   (CAltVal (CEInt 3) (CEInt 4)), (CAltVal (CEInt 4) (CEInt 5)), 
-						   (CAltVal (CEInt 0) (CEInt 1)) ] )
+							(CAltVal (CEInt 3) (CEInt 4)), (CAltVal (CEInt 4) (CEInt 5)), 
+							(CAltVal (CEInt 0) (CEInt 1)) ] )
 
 --testing comparing two strings
 -- "sth"=="sth"
@@ -361,33 +372,33 @@ test16 = (CEOp (CEString "sth") "==" (CEString "sth"))
 test17 = (CCase (CEInt 0) [(CAltVal (CEInt 1) 
 								(CCase (CEInt 1) 
 									[(CAltVal (CEInt 0) (CEInt 1) ), 
-									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
+									(CAltVal (CEInt 1) (CEInt 2) ) ] 
 								)  
-						   ),
+							),
 							(CAltVal (CEInt 0) 
 								(CCase (CEInt 1) 
 									[(CAltVal (CEInt 0) (CEInt 1) ), 
-									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
+									(CAltVal (CEInt 1) (CEInt 2) ) ] 
 								)  
-						   )
-						  ] 
-		  )
+							)
+							] 
+		)
 
 --testing defining new variable as boolean (true)
 --sth:: Age = Age {Person 10} 10; sth
 test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CConst "Person" [(CEInt 10)] ), (CEInt 10) ] )),
 					(CEId "sth")
-				 ]
-		 )
+					]
+			)
 
 
 --testing simple ADT-based case statement
 -- case (Age 10) of (Age x) -> x
 test19 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
-				  		(CAltADT "Age" ["x"] (CEId "x") ) 
-				  					  ])
-				 ]
-		 )
+							(CAltADT "Age" ["x"] (CEId "x") ) 
+							])
+				]
+		)
 
 --testing simple ADT-based case sttement with many alternatives
 -- case (Age 10) of (Something x) -> x
@@ -398,10 +409,10 @@ test20 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [
 						(CAltADT "Something" ["x"] (CEInt 5) ),
 						(CAltADT "Sth" ["x"] (CEInt 15) ),
 						(CAltADT "Person" ["x"] (CEInt 25) ),
-				  		(CAltADT "Age" ["x"] (CEId "x") )
-				  ])
-				 ]
-		 )
+						(CAltADT "Age" ["x"] (CEId "x") )
+					])
+				]
+		)
 
 --testing nested case statement
 --		(case (int 1) of 
@@ -413,14 +424,14 @@ test20 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [
 test21 = (CExprs [
 								(CCase (CEInt 1) 
 									[(CAltVal (CEInt 0) (CEInt 1) ), 
-									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
+									(CAltVal (CEInt 1) (CEInt 2) ) ] 
 								),
 								(CCase (CEInt 3) 
 									[(CAltVal (CEInt 1) (CEInt 2) ), 
-									 (CAltVal (CEInt 3) (CEInt 4) ) ] 
+									(CAltVal (CEInt 3) (CEInt 4) ) ] 
 								)  
-				 ] 
-		  )
+				] 
+		)
 
 --------------------------------------------------------------------------------------------------------
 --Examples from specification
@@ -471,7 +482,7 @@ example3 = (CExprs [
 						)  
 					),
 					(CEOp (CEId "ages") "div" (CEInt 2) )
-				   ]
+				]
 			)
 
 --------------------------------------------------------------------------------------------------------
@@ -487,8 +498,8 @@ main = do
 --helper functions/wrappers
 ---------------------------------------------------------------------------------------------------------
 find id env = case lookup id env of
-		   Just e -> e
-		   Nothing -> error "Something is wrong"
+			Just e -> e
+			Nothing -> error "Something is wrong"
 
 mult_dup :: Int -> String
 mult_dup n = (concat ( replicate n "dup\n" ) )
