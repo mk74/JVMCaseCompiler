@@ -24,7 +24,7 @@ op_func type1 "-" = "isub"
 op_func type1 "*" = "imul"
 op_func type1 "/" = "idiv"
 op_func "int" "==" = "invokestatic Program/compare_ints(II)I\n"
---op_func "string" "==" = "invokestatic Program/compare_strs(Ljava/lang/String;Ljava/lang/String;)Z\n"
+op_func "string" "==" = "invokestatic Program/compare_strs(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Boolean;\n"
 op_func type1 "<" = "invokestatic Program/less_int_than(II)I\n"
 op_func type1 "and" = "iand"
 op_func type1 "or" = "ior"
@@ -57,8 +57,8 @@ compile_str env expr = snd (compile env expr)
 
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = ( (track_stack "int" env), "sipush " ++ show i1 ++ "\n")
-compile env (CEBool True) = ( (track_stack "boolean" env), "iconst_1\n" ++ boolean_value ++ "\n")
-compile env (CEBool False) = ( (track_stack "boolean" env), "iconst_0\n" ++ boolean_value ++ "\n")
+compile env (CEBool True) = ( (track_stack "boolean" env), "iconst_1\n" ++ boolean_value)
+compile env (CEBool False) = ( (track_stack "boolean" env), "iconst_0\n" ++ boolean_value)
 compile env (CEString str1) = ( (track_stack "string" env), "ldc \"" ++ str1 ++ "\"\n")
 
 compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_local_var id1 env) ++ "\n")
@@ -132,7 +132,7 @@ println_signature _ = "Ljava/lang/Object;"
 
 
 boolean_value ::String
-boolean_value = "invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;"
+boolean_value = "invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;\n"
 
 adt_class :: String
 adt_class = ".class public Adt\n.super java/lang/Object\n\n"
@@ -188,6 +188,13 @@ static_main_start =
 					++ "iload_0\niload_1\n"
 					++ "if_icmpne <false_equal_if>\niconst_1\ngoto <end_equal_if>\n<false_equal_if>:\niconst_0\n<end_equal_if>:\n"
 					++ "ireturn\n.end method\n\n"
+-- Boolean compare_strs(String, String)
+					++ ".method public static compare_strs(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Boolean;\n"
+					++ ".limit stack 3\n.limit locals 3\n"
+					++ ""
+					++ "aload_0\naload_1\ninvokevirtual java/lang/String/equals(Ljava/lang/Object;)Z\n"
+					++ boolean_value
+					++ "areturn\n.end method\n\n"
 -- int less_int_than(int, int)
 					++ ".method public static less_int_than(II)I\n"
 					++ ".limit stack 3\n.limit locals 3\n"
@@ -276,6 +283,10 @@ test15 = (CCase (CEInt 0) [(CAltVal (CEInt 1) (CEInt 2)), (CAltVal (CEInt 2) (CE
 --										(CAltVal (CEString "Some") (CEString "It's Some")), 
 --										(CAltVal (CEString "Something") (CEString "It's Something!"))]) 
 
+--testing comparing two strings
+-- "sth"=="sth"
+test17 = (CEOp (CEString "sth") "==" (CEString "sth"))
+
 -- testing simple case statement
 -- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
 example1 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ), (CAltVal (CEInt 1) (CEInt 0) ) ] )
@@ -292,7 +303,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test15)
+			where compiled = (compile start_env test17)
 
 
 --------------------------------------------------------------------------------------------------------
