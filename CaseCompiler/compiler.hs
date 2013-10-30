@@ -104,7 +104,7 @@ create_adt_inline tag value n = "ldc \"" ++ tag ++ "\"\n"
 						  		++ "sipush " ++ show value ++ "\n"
 						  		++ "sipush " ++ show n ++ "\n"
 						  		++ "invokestatic Adt/create(Ljava/lang/String;II)LAdt;\n"
-						  		++ (concat ( replicate n "dup\n" ))
+						  		++ (mult_dup n)
 
 add_member_inline :: String
 add_member_inline = "invokevirtual Adt/add(LAdt;)V\n"
