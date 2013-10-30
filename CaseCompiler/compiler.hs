@@ -78,15 +78,29 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
-compile env (CCase e [(CAltVal e1_cond true_e1) ] ) = ( (track_stack "int" env), (compile_str env e) ++ (compile_str env e1_cond) 
-														++ (compare_exec env true_e1) )
+
+--TODO: other types than int?
+compile env (CCase e cavs) = ( (track_stack "int" env), (compile_str env e) ++ (mult_dup ( (length cavs) -1) ) ++  (loop_cases env cavs 0) ++ case_statement_end )
+
+loop_cases :: Env -> [CAlt] -> Integer -> String
+loop_cases env [(CAltVal e_cond e_exec)] i = (compile_str env e_cond) ++ "if_icmpne <default_case>\n" ++ (compile_str env e_exec) ++ "goto <end_case>\n"
+loop_cases env ((CAltVal e_cond e_exec):es) i = (compile_str env e_cond) ++ "if_icmpne <next_case>\n" ++ (compile_str env e_exec) 
+											  ++ "goto <end_case>\n<next_case>:\n" ++ (loop_cases env es (i+1) )
+
+--compile env (CCase e [(CAltVal e1_cond true_e1) ] ) = ( (track_stack "int" env), (compile_str env e) ++ (compile_str env e1_cond) 
+--														++ (compare_exec env true_e1) )
 	--( (track_stack "int" env), (compile_str env true_e1) )
 	--( (track_stack "int" env), (compile_str env e) ++ (compile_str env e1_cond) ++ (compare_exec env true_e1) )
 
+case_statement_case_str :: Env -> CExpr -> CExpr -> String
+case_statement_case_str env e_cond e_exec = (compile_str env e_cond) ++ "if_icmpne <next_case>\n" ++ (compile_str env e_exec) ++ "goto <end_case>\n"
 
-compare_exec :: Env -> CExpr -> String
-compare_exec env e1 = "if_icmpne <default_case>\n" ++ (compile_str env e1) ++ "goto <end_case>\n"
-					  ++"<default_case>:\nsipush 1\n<end_case>:\n"
+--compare_exec :: Env -> CExpr -> String
+--compare_exec env e1 = "if_icmpne <default_case>\n" ++ (compile_str env e1) ++ "goto <end_case>\n"
+--					  ++"<default_case>:\nsipush 1\n<end_case>:\n"
+
+case_statement_end :: String
+case_statement_end = "<default_case>:\nsipush 1\n<end_case>:\n"
 
 
 --compile env (CCase (CEString i1) [(CAlt "string" e2)] ) = compile env e2 
@@ -258,10 +272,13 @@ test12 = (CEOp (CEInt 10) "==" (CEInt 11))
 -- 11 < 11
 test13 = (CEOp (CEInt 11) "<" (CEInt 11))
 
+--testing simplest case statement
+-- case (int 0) of (int 0) -> (int 1)
+test14 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ) ] )
+
 -- testing simple case statement
--- case (int 0) of int-> (int 1) | string -> (int 0)
-example1 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ) ] )
-	--, (CAlt "string" (CEInt 4) ) ] )
+-- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
+example1 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ), (CAltVal (CEInt 1) (CEInt 0) ) ] )
 
 --testing simple typedef/new variable example
 -- type Time = Hour int | Min int; t :: Time = Min 2; t }
@@ -275,7 +292,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env example1)
+			where compiled = (compile start_env test14)
 
 
 --------------------------------------------------------------------------------------------------------
@@ -283,5 +300,8 @@ main = do
 ---------------------------------------------------------------------------------------------------------
 find id env = case lookup id env of
 		   Just e -> e
+
+mult_dup :: Int -> String
+mult_dup n = (concat ( replicate n "dup\n" ) )
 
 
