@@ -48,13 +48,16 @@ start_env = [("", ("", -1) )]
 track_stack :: CType -> Env -> Env
 track_stack type1 env1 = (init env1) ++ [("", (type1, -1) )]
 
+find_track_stack :: Env -> CType
+find_track_stack env = fst (find "" env)
+
 compile_str :: Env ->CExpr -> String
 compile_str env expr = snd (compile env expr)
 
 compile :: Env -> CExpr -> (Env, String)
 compile env (CEInt i1) = ( (track_stack "int" env), "sipush " ++ show i1 ++ "\n")
-compile env (CEBool True) = ( (track_stack "object" env), "iconst_1\n" ++ boolean_value ++ "\n")
-compile env (CEBool False) = ( (track_stack "object" env), "iconst_0\n" ++ boolean_value ++ "\n")
+compile env (CEBool True) = ( (track_stack "boolean" env), "iconst_1\n" ++ boolean_value ++ "\n")
+compile env (CEBool False) = ( (track_stack "boolean" env), "iconst_0\n" ++ boolean_value ++ "\n")
 compile env (CEString str1) = ( (track_stack "string" env), "ldc \"" ++ str1 ++ "\"\n")
 
 compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_local_var id1 env) ++ "\n")
@@ -117,7 +120,7 @@ printing_code env = (store_instr type1 ) ++ " " ++ new_local_id ++ "\n"
  				  	++ (load_instr type1 ) ++ " " ++ new_local_id ++ "\n"
   				  	++ "invokevirtual java/io/PrintStream/println(" ++ (println_signature type1) ++ ")V\n"
   				  		where 
-  				  			type1 = fst (find "" env)
+  				  			type1 = find_track_stack env
   				  			new_local_id = show ( (length env) + 1)
 
 println_signature :: String -> String
