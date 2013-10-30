@@ -118,6 +118,10 @@ loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CEString type1) new_e1 
 											where 
 												ids_as_exprs = map CEId ids
 												new_e1 = (CExprs [ (CENewVar (head ids) "int" (CHelpNext) ), e1])
+loop_alts env ((CAltADT type1 ids e1):alts) = create_alt env (CEString type1) new_e1 (length alts) equals_tag_inline ++ (loop_alts env alts)
+											where 
+												ids_as_exprs = map CEId ids
+												new_e1 = (CExprs [ (CENewVar (head ids) "int" (CHelpNext) ), e1])
 
 equals_tag_inline :: String --we need swap/dup_x1 combination since we want to declare local variable if succesful
 equals_tag_inline = "swap\ndup_x1\nswap\ninvokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
@@ -231,9 +235,6 @@ adt_class = ".class public Adt\n.super java/lang/Object\n\n"
  			++ "arraylength\nif_icmpne <no_rewarding_next>\n"
  			++ "aload_0\niconst_0\nputfield Adt/index I\n"
  			++ "<no_rewarding_next>:\niload_1\n"
--- 			++ "aload_0\ngetfield Adt/arr [LAdt;\n"
--- 			++ "aload_0\ngetfield Adt/index I\n"
--- 			++ "aaload\nareturn\n.end method\n\n"
 			++ "ireturn\n.end method\n\n"
 
 preamble_main :: String
@@ -383,11 +384,17 @@ test19 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [
 
 --testing simple ADT-based case statement
 test20 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
-				  		(CAltADT "Age" ["age1"] (CEId "age1") ) 
-				  					  ])
+				  		(CAltADT "Age" ["age1"] (CEId "age1") )
+				  ])
 				 ]
 		 )
 
+test21 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
+						(CAltADT "Person" ["age1"] (CEId "age1") ),
+				  		(CAltADT "Age" ["age1"] (CEId "age1") )
+				  ])
+				 ]
+		 )
 --testing nested case statement
 --		(case (int 1) of 
 --				(int 0) -> (int 1) )
@@ -395,7 +402,7 @@ test20 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [
 --		(case (int 3) of 
 --				(int 1) -> (int 2) )
 --				(int 4) -> (int 4) )
-test21 = (CExprs [
+test22 = (CExprs [
 								(CCase (CEInt 1) 
 									[(CAltVal (CEInt 0) (CEInt 1) ), 
 									 (CAltVal (CEInt 1) (CEInt 2) ) ] 
@@ -423,7 +430,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test19)
+			where compiled = (compile start_env test21)
 
 
 --------------------------------------------------------------------------------------------------------
