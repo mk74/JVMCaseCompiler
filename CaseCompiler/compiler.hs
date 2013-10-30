@@ -18,15 +18,16 @@ data CAlt = CAltVal CExpr CExpr
 			| CAltADT CType CExpr
 data CFakeConstr = CFakeConstr CId [CType]
 
-op_func :: String -> String
-op_func "+" = "iadd"
-op_func "-" = "isub"
-op_func "*" = "imul"
-op_func "/" = "idiv"
-op_func "==" = "invokestatic Program/compare_ints(II)I\n"
-op_func "<" = "invokestatic Program/less_int_than(II)I\n"
-op_func "and" = "iand"
-op_func "or" = "ior"
+op_func :: CType -> String -> String
+op_func type1 "+" = "iadd"
+op_func type1 "-" = "isub"
+op_func type1 "*" = "imul"
+op_func type1 "/" = "idiv"
+op_func "int" "==" = "invokestatic Program/compare_ints(II)I\n"
+--op_func "string" "==" = "invokestatic Program/compare_strs(Ljava/lang/String;Ljava/lang/String;)Z\n"
+op_func type1 "<" = "invokestatic Program/less_int_than(II)I\n"
+op_func type1 "and" = "iand"
+op_func type1 "or" = "ior"
 
 store_instr :: String -> String
 store_instr "int" = "istore "
@@ -65,8 +66,10 @@ compile env (CEId id1) = ( (track_stack type1 env), (load_instr type1 ) ++ (get_
 
 compile env (CConst id1 es) = ( (track_stack "object" env), (create_adt_inline id1 0 (length es) ) ++ (loop_add_members env es) )
 
-compile env (CEOp e1 op1 e2) = ( (fst compiled), (snd compiled) ++ (compile_str env e2) ++ (op_func op1) ++ "\n")
-									where compiled = (compile env e1)
+compile env (CEOp e1 op1 e2) = ( env', (snd compiled) ++ (compile_str env e2) ++ (op_func (find_track_stack env') op1) ++ "\n")
+									where 
+										compiled = (compile env e1)
+										env' = (fst compiled)
 
 compile env (CENewVar id1 t1 e1) =  (env', (compile_str env e1) ++ (store_instr t1) ++ show ((length env) + 1) ++ "\n")
 														where env' = [(id1, (t1, (length env) + 1) )] ++ env
