@@ -107,8 +107,8 @@ compile env (CExprs (e1:es)) = ( (fst compiled), (snd res1) ++ (snd  compiled) )
 
 compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 
-compile env (CCase e cavs) = ( (fst compiled), (snd compiled) ++ (mult_dup ( (length cavs) -1) ) ++  
-							   (loop_cases env' cavs 0) ++ (case_statement_end depth) )
+compile env (CCase e alts) = ( (fst compiled), (case_statement_start env e alts) ++  
+							   (loop_alts env' alts 0) ++ (case_statement_end depth) )
 								where 
 									compiled = (compile env e)
 									depth = get_depth env'
@@ -116,17 +116,25 @@ compile env (CCase e cavs) = ( (fst compiled), (snd compiled) ++ (mult_dup ( (le
 
 
 
-loop_cases :: Env -> [CAlt] -> Int -> String
-loop_cases env [(CAltVal e_cond e_exec)] i = (compile_str env e_cond) ++ "if_icmpne <default_case_" ++ show depth ++ ">\n" 
+loop_alts :: Env -> [CAlt] -> Int -> String
+loop_alts env [(CAltVal e_cond e_exec)] i = (compile_str env e_cond) ++ "if_icmpne <default_case_" ++ show depth ++ ">\n" 
 											 ++ (compile_str env e_exec) ++ "goto <end_case_" ++ show depth ++ ">\n"
 												where depth = get_depth env
-loop_cases env ((CAltVal e_cond e_exec):es) i = (compile_str env e_cond) ++ "if_icmpne <case_" ++ show depth ++ "_" ++ show i ++ ">\n" 
-													++ (mult_pop (length es) ) ++ (compile_str env e_exec) 
-											     ++ "goto <end_case_" ++ show depth ++ ">\n<case_" ++ show depth ++ "_" ++ show i ++ ">:\n" 
-											     ++ (loop_cases env es (i+1) )
-											  	where depth = get_depth env
+loop_alts env ((CAltVal e_cond e_exec):alts) i = (compile_str env e_cond) ++ "if_icmpne " ++ alt_label ++ "\n" 
+													++ (mult_pop (length alts) ) ++ (compile_str env e_exec) 
+											     	++ "goto <end_case_" ++ show depth ++ ">\n" ++ alt_label ++ ":\n" 
+											     	++ (loop_alts env alts (i+1) )
+											  			where 
+											  				depth = get_depth env
+											  				alt_label = "<case_" ++ show depth ++ "_alt_" ++ show i ++ ">"
 
-loop_cases env [(CAltADT type1 ids e1)] i = compile_str env e1
+
+
+loop_alts env [(CAltADT type1 ids e1)] i = compile_str env e1
+
+-- env -> Conditional expression -> amount of alternatives
+case_statement_start :: Env -> CExpr -> [CAlt] -> String
+case_statement_start env e1 alts = snd (compile env e1) ++ (mult_dup ( (length alts) -1) ) 
 
 case_statement_end :: Int -> String
 case_statement_end depth = "<default_case_" ++ show depth ++ ">:\nsipush 1\n<end_case_" ++ show depth ++ ">:\n"
@@ -358,7 +366,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test19)
+			where compiled = (compile start_env test17)
 
 
 --------------------------------------------------------------------------------------------------------
