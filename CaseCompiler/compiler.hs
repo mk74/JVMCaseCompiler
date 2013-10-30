@@ -15,7 +15,8 @@ data CExpr = CEInt Int
 			 | CFakeTypedef CId CFakeConstr [CFakeConstr]
 
 data CAlt = CAltVal CExpr CExpr
-			| CAltADT CType CExpr
+			| CAltADT CType [CId] CExpr
+
 data CFakeConstr = CFakeConstr CId [CType]
 
 op_func :: CType -> String -> String
@@ -124,6 +125,8 @@ loop_cases env ((CAltVal e_cond e_exec):es) i = (compile_str env e_cond) ++ "if_
 											     ++ "goto <end_case_" ++ show depth ++ ">\n<case_" ++ show depth ++ "_" ++ show i ++ ">:\n" 
 											     ++ (loop_cases env es (i+1) )
 											  	where depth = get_depth env
+
+loop_cases env [(CAltADT type1 ids e1)] i = compile_str env e1
 
 case_statement_end :: Int -> String
 case_statement_end depth = "<default_case_" ++ show depth ++ ">:\nsipush 1\n<end_case_" ++ show depth ++ ">:\n"
@@ -332,8 +335,12 @@ test18 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CConst "Person" [(CEInt
 
 
 --testing simple ADT-based case statement
---test19 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10), (CEInt 4) ] ) ),
---					(CEInt 3)])
+test19 = (CExprs [(CENewVar "sth" "Age" (CConst "Age" [ (CEInt 10)] ) ),
+				  (CCase (CEId "sth") [ 
+				  		(CAltADT "Age" ["age1"] (CEInt 12) ) 
+				  					  ])
+				 ]
+		 )
 
 -- testing simple case statement
 -- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
@@ -351,7 +358,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test18)
+			where compiled = (compile start_env test19)
 
 
 --------------------------------------------------------------------------------------------------------
