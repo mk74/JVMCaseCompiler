@@ -13,6 +13,7 @@ data CExpr = CEInt Int
 			 | CExprs [CExpr]
 			 | CCase CExpr [CAlt]
 			 | CFakeTypedef CId CFakeConstr [CFakeConstr]
+--			 | CHelpNext (CId id)
 
 data CAlt = CAltVal CExpr CExpr
 			| CAltADT CType [CId] CExpr
@@ -111,8 +112,10 @@ compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++ (loop_
 loop_alts :: Env -> [CAlt] -> String
 loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0 "if_icmpne"
 loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) "if_icmpne" ++ (loop_alts env alts )
-loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CEString type1) e1 0 equals_tag_inline
-											where ids_as_exprs = map CEId ids
+loop_alts env [(CAltADT type1 ids e1)] = create_alt env (CEString type1) new_e1 0 equals_tag_inline
+											where 
+												ids_as_exprs = map CEId ids
+												new_e1 = (CExprs [ (CENewVar (head ids) "int" (CEInt 10)), e1])
 
 equals_tag_inline :: String --we need swap/dup_x1 combination since we want to declare local variable if succesful
 equals_tag_inline = "swap\ndup_x1\nswap\ninvokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
@@ -372,7 +375,14 @@ test19 = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [
 				 ]
 		 )
 
-test19x = (CConst "Age" [ (CEInt 10)] )
+
+--testing simple ADT-based case statement
+test19x = (CExprs [(CCase (CConst "Age" [ (CEInt 10)] ) [ 
+				  		(CAltADT "Age" ["age1"] (CEId "age1") ) 
+				  					  ])
+				 ]
+		 )
+
 --testing nested case statement
 --		(case (int 1) of 
 --				(int 0) -> (int 1) )
@@ -408,7 +418,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test19)
+			where compiled = (compile start_env test19x)
 
 
 --------------------------------------------------------------------------------------------------------
