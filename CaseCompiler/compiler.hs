@@ -82,10 +82,11 @@ compile env (CFakeTypedef id1 constr1 constrs) = (env, "")
 --TODO: other types than int?
 compile env (CCase e cavs) = ( (track_stack "int" env), (compile_str env e) ++ (mult_dup ( (length cavs) -1) ) ++  (loop_cases env cavs 0) ++ case_statement_end )
 
-loop_cases :: Env -> [CAlt] -> Integer -> String
+loop_cases :: Env -> [CAlt] -> Int -> String
 loop_cases env [(CAltVal e_cond e_exec)] i = (compile_str env e_cond) ++ "if_icmpne <default_case>\n" ++ (compile_str env e_exec) ++ "goto <end_case>\n"
-loop_cases env ((CAltVal e_cond e_exec):es) i = (compile_str env e_cond) ++ "if_icmpne <next_case>\n" ++ (compile_str env e_exec) 
-											  ++ "goto <end_case>\n<next_case>:\n" ++ (loop_cases env es (i+1) )
+loop_cases env ((CAltVal e_cond e_exec):es) i = (compile_str env e_cond) ++ "if_icmpne <case_" ++ show i ++ ">\n" ++ (mult_pop (length es) ) 
+											  ++ (compile_str env e_exec) 
+											  ++ "goto <end_case>\n<case_" ++ show i ++ ">:\n" ++ (loop_cases env es (i+1) )
 
 --compile env (CCase e [(CAltVal e1_cond true_e1) ] ) = ( (track_stack "int" env), (compile_str env e) ++ (compile_str env e1_cond) 
 --														++ (compare_exec env true_e1) )
@@ -276,6 +277,12 @@ test13 = (CEOp (CEInt 11) "<" (CEInt 11))
 -- case (int 0) of (int 0) -> (int 1)
 test14 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ) ] )
 
+--testing case statement with many possibilities
+--  case (int 0) of (int 1) -> (int 2) | (int 2)-> (int 3) | (int 3)-> (int 4) | (int 4) -> (int 5) | (int 0) -> (int 1)
+test15 = (CCase (CEInt 0) [(CAltVal (CEInt 1) (CEInt 2)), (CAltVal (CEInt 2) (CEInt 3)), 
+						   (CAltVal (CEInt 3) (CEInt 4)), (CAltVal (CEInt 4) (CEInt 5)), 
+						   (CAltVal (CEInt 0) (CEInt 1)) ] )
+
 -- testing simple case statement
 -- case (int 0) of (int 0)-> (int 1) | (int 1) -> (int 0)
 example1 = (CCase (CEInt 0) [(CAltVal (CEInt 0) (CEInt 1) ), (CAltVal (CEInt 1) (CEInt 0) ) ] )
@@ -292,7 +299,7 @@ example2 = (CExprs [(CFakeTypedef "Time" (CFakeConstr "Hour" ["int"] ) [ (CFakeC
 main = do
 		writeFile "adt.j" adt_class
 		putStrLn (jasminWrapper (snd compiled ++ printing_code (fst compiled) ) )
-			where compiled = (compile start_env test14)
+			where compiled = (compile start_env test15)
 
 
 --------------------------------------------------------------------------------------------------------
@@ -303,5 +310,8 @@ find id env = case lookup id env of
 
 mult_dup :: Int -> String
 mult_dup n = (concat ( replicate n "dup\n" ) )
+
+mult_pop :: Int -> String
+mult_pop n = (concat ( replicate n "pop\n" ) )
 
 
