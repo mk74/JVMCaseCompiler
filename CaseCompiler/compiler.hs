@@ -156,7 +156,7 @@ case_statement_start env e1 alts = snd (compile env e1) ++ (mult_dup ( (length a
 case_statement_end :: Int -> String
 case_statement_end case_n = "sipush 1\n<end_case_" ++ show case_n ++ ">:\n"
 
--- loop adding memebrs(nodes of tree) in our abstract data type jvm's object - Adt
+-- loop adding memebrs(nodes of tree) in our algebraic data type jvm's object - Adt
 loop_add_members :: Env -> [CExpr] -> String
 loop_add_members env [(CEInt i1)] = (create_adt_inline "int" i1 0) ++ add_member_inline
 loop_add_members env [e1] = (compile_str env e1) ++ (add_member_inline)
