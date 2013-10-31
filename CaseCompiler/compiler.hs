@@ -116,7 +116,7 @@ compile env (CCase e alts) = ( env', (case_statement_start env e alts) ++ (loop_
 compile env (CHelpNext) = (env, "invokevirtual Adt/next()I\n")
 
 
---loop creating alternatives for CASE statemnt 
+--loop creating alternatives for CASE statement 
 loop_alts :: Env -> [CAlt] -> String
 loop_alts env [(CAltVal e_cond e_exec)] = create_alt env e_cond e_exec 0 "if_icmpne" 0
 loop_alts env ((CAltVal e_cond e_exec):alts) = create_alt env e_cond e_exec (length alts) "if_icmpne" 0 ++ (loop_alts env alts )
@@ -132,7 +132,7 @@ loop_alts env ((CAltADT type1 ids e1):alts) = create_alt env (CEString type1) ne
 equals_tag_inline :: String --we need swap/dup_x1 combination since we want to declare local variable if succesful
 equals_tag_inline = "swap\ndup_x1\nswap\ninvokevirtual Adt/equals(Ljava/lang/String;)Z\nifeq "
 
---creates single alternative for CASE statemnt
+--creates single alternative for CASE statement
 -- env -> conditional expression -> execution expression if condition is true -> index of which alt in this case statement - > comparison_func_str
 create_alt :: Env -> CExpr -> CExpr -> Int -> String -> Int -> String 
 create_alt env e_cond e_exec i1 cmp_func_str x1 = (compile_str env e_cond) ++ cmp_func_str ++ " " ++ alt_label ++ "\n"
@@ -299,6 +299,7 @@ test0 = (CEInt 5)
 test1 = (CEOp (CEInt 10) "+" (CEInt 15))
 
 --testing AND operator
+-- 2 and 1
 test2 = (CEOp (CEInt 2) "and" (CEInt 1))
 
 --testing nested arithmetic operations
