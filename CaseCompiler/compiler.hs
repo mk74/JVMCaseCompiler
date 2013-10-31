@@ -510,5 +510,3 @@ mult_pop n = (concat ( replicate n "pop\n" ) )
 
 compile_str :: Env ->CExpr -> String
 compile_str env expr = snd (compile env expr)
-
-
